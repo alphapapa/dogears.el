@@ -1,4 +1,4 @@
-;;; helm-dogears.el --- Helm source for Dogears      -*- lexical-binding: t; -*-
+;;; helm-dog-ears.el --- Helm source for Dog-Ears      -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2021  Adam Porter
 
@@ -20,28 +20,28 @@
 
 ;;; Commentary:
 
-;; This library provides a Helm source for Dogears.  It may be used in
+;; This library provides a Helm source for Dog-Ears.  It may be used in
 ;; any Helm command by adding it to the sources list.  Note that it's
-;; not necessary to have a `helm-dogears' command, because `helm-mode'
-;; is already compatible with the `dogears-go' command.
+;; not necessary to have a `helm-dog-ears' command, because `helm-mode'
+;; is already compatible with the `dog-ears-go' command.
 
 ;;; Code:
 
 ;;;; Requirements
 
-(require 'dogears)
+(require 'dog-ears)
 
 (require 'helm)
 
 ;;;; Variables
 
-(defvar helm-dogears-source
-  (helm-make-source "Dogears" 'helm-source-sync
+(defvar helm-dog-ears-source
+  (helm-make-source "Dog-Ears" 'helm-source-sync
     :candidates (lambda ()
-                  (cl-loop for place in dogears-list
-                           collect (cons (dogears--format-record place)
+                  (cl-loop for place in dog-ears-list
+                           collect (cons (dog-ears--format-record place)
                                          place)))
-    :action (list (cons "Go to place" #'dogears-go))))
+    :action (list (cons "Go to place" #'dog-ears-go))))
 
 
 ;;;; Customization
@@ -55,6 +55,6 @@
 
 ;;;; Footer
 
-(provide 'helm-dogears)
+(provide 'helm-dog-ears)
 
-;;; helm-dogears.el ends here
+;;; helm-dog-ears.el ends here

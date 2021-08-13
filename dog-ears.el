@@ -1,4 +1,4 @@
-;;; dogears.el --- Never lose your place again       -*- lexical-binding: t; -*-
+;;; dog-ears.el --- Never lose your place again       -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2021  Adam Porter
 
@@ -39,94 +39,94 @@
 
 ;;;; Variables
 
-(defvar dogears-list nil
+(defvar dog-ears-list nil
   "List of dogeared places.")
 
-(defvar dogears-idle-timer nil
-  "Idle timer which dogears the current place.")
+(defvar dog-ears-idle-timer nil
+  "Idle timer which dog-ears the current place.")
 
 ;;;; Customization
 
-(defgroup dogears nil
+(defgroup dog-ears nil
   "Never lose your place again."
   :group 'convenience)
 
-(defcustom dogears-functions nil
+(defcustom dog-ears-functions nil
   "Functions which should dogear a place when called.
-These are advised when `dogears-mode' is activated."
+These are advised when `dog-ears-mode' is activated."
   :type '(repeat function))
 
-(defcustom dogears-hooks
+(defcustom dog-ears-hooks
   '(imenu-after-jump-hook)
   "Hooks which should dogear a place when run.
-Dogears adds itself to these hooks when `dogears-mode' is
+Dog-Ears adds itself to these hooks when `dog-ears-mode' is
 activated."
   :type '(repeat variable))
 
-(defcustom dogears-ignore-places-functions
+(defcustom dog-ears-ignore-places-functions
   (list #'minibufferp
-        #'dogears--ignored-mode-p)
+        #'dog-ears--ignored-mode-p)
   "Don't remember any places for which any of these functions return non-nil."
   :type '(repeat function))
 
-(defcustom dogears-ignore-modes
-  '(dogears-list-mode fundamental-mode helm-major-mode)
+(defcustom dog-ears-ignore-modes
+  '(dog-ears-list-mode fundamental-mode helm-major-mode)
   "Don't remember any places in buffers in these modes."
   :type '(repeat symbol))
 
-(defcustom dogears-idle 5
+(defcustom dog-ears-idle 5
   "Remember place when Emacs is idle for this many seconds."
   :type '(choice (number :tag "Seconds")
                  (const :tag "Never" nil)))
 
-(defcustom dogears-limit 100
+(defcustom dog-ears-limit 100
   "How many places to remember."
   :type 'integer)
 
-(defcustom dogears-line-width 25
+(defcustom dog-ears-line-width 25
   "How many characters from a place's line to show."
   :type 'integer)
 
-(defcustom dogears-within-function #'dogears--which-function
+(defcustom dog-ears-within-function #'dog-ears--which-function
   "Function that returns what a place is \"within\"."
-  :type '(choice (function-item dogears--which-function)
-                 (function-item dogears--within)
+  :type '(choice (function-item dog-ears--which-function)
+                 (function-item dog-ears--within)
                  (function :tag "Custom function")))
 
 ;;;; Commands
 
 ;;;###autoload
-(define-minor-mode dogears-mode
+(define-minor-mode dog-ears-mode
   "Never lose your place again.
-Dogears mode keeps track of where you've been and helps you
+Dog-Ears mode keeps track of where you've been and helps you
 easily find your way back."
   :global t
-  (if dogears-mode
+  (if dog-ears-mode
       (progn
-        (dolist (fn dogears-functions)
-          (advice-add fn :after #'dogears-remember))
-        (dolist (hook dogears-hooks)
-          (add-hook hook #'dogears-remember))
-        (when dogears-idle
-          (setf dogears-idle-timer
-                (run-with-idle-timer dogears-idle 'repeat #'dogears-remember))))
+        (dolist (fn dog-ears-functions)
+          (advice-add fn :after #'dog-ears-remember))
+        (dolist (hook dog-ears-hooks)
+          (add-hook hook #'dog-ears-remember))
+        (when dog-ears-idle
+          (setf dog-ears-idle-timer
+                (run-with-idle-timer dog-ears-idle 'repeat #'dog-ears-remember))))
     ;; Disable mode.
-    (dolist (fn dogears-functions)
-      (advice-remove fn #'dogears-remember))
-    (dolist (hook dogears-hooks)
-      (remove-hook hook #'dogears-remember))
-    (when dogears-idle-timer
-      (cancel-timer dogears-idle-timer)
-      (setf dogears-idle-timer nil))))
+    (dolist (fn dog-ears-functions)
+      (advice-remove fn #'dog-ears-remember))
+    (dolist (hook dog-ears-hooks)
+      (remove-hook hook #'dog-ears-remember))
+    (when dog-ears-idle-timer
+      (cancel-timer dog-ears-idle-timer)
+      (setf dog-ears-idle-timer nil))))
 
 ;;;###autoload
-(defun dogears-remember (&rest _ignore)
+(defun dog-ears-remember (&rest _ignore)
   "Remember the current place."
   (interactive)
-  (unless (seq-some #'funcall dogears-ignore-places-functions)
+  (unless (seq-some #'funcall dog-ears-ignore-places-functions)
     (if-let ((record (or (ignore-errors
                            (funcall bookmark-make-record-function))
-                         (dogears--buffer-record))))
+                         (dog-ears--buffer-record))))
         (progn
           (setf (map-elt (cdr record) 'manual)
                 (if (called-interactively-p 'interactive) "✓" " "))
@@ -137,26 +137,26 @@ easily find your way back."
             (push "" record))
           (unless (map-elt (cdr record) 'buffer)
             (setf (map-elt (cdr record) 'buffer) (buffer-name)))
-          (when-let ((within (or (funcall dogears-within-function)
-                                 (dogears--within)
+          (when-let ((within (or (funcall dog-ears-within-function)
+                                 (dog-ears--within)
                                  (car record))))
             (setf (map-elt (cdr record) 'within) within))
           (setf (map-elt (cdr record) 'mode) major-mode
                 (map-elt (cdr record) 'line) (buffer-substring
                                               (point-at-bol) (point-at-eol)))
-          (push record dogears-list)
-          (setf dogears-list (delete-dups dogears-list)
-                dogears-list (seq-take dogears-list dogears-limit)))
+          (push record dog-ears-list)
+          (setf dog-ears-list (delete-dups dog-ears-list)
+                dog-ears-list (seq-take dog-ears-list dog-ears-limit)))
       (when (called-interactively-p 'interactive)
-        (message "Dogears: Couldn't dogear this place")))))
+        (message "Dog-Ears: Couldn't dogear this place")))))
 
 ;;;###autoload
-(defun dogears-go (place)
+(defun dog-ears-go (place)
   "Go to dogeared PLACE.
 Interactively, select PLACE with completion.  PLACE should be a
 bookmark record."
-  (interactive (let* ((collection (cl-loop for place in dogears-list
-                                           for key = (dogears--format-record place)
+  (interactive (let* ((collection (cl-loop for place in dog-ears-list
+                                           for key = (dog-ears--format-record place)
                                            collect (cons key place)))
                       (choice (completing-read "Place: " collection nil t)))
                  (list (alist-get choice collection nil nil #'equal))))
@@ -171,7 +171,7 @@ bookmark record."
 
 ;;;; Functions
 
-(defun dogears--buffer-record ()
+(defun dog-ears--buffer-record ()
   "Return a bookmark-like record for the current buffer.
 Intended as a fallback for when `bookmark-make-record-function'
 returns nil."
@@ -182,7 +182,7 @@ returns nil."
         (cons 'mode major-mode)
         (cons 'position (point))))
 
-(defun dogears--within ()
+(defun dog-ears--within ()
   "Return string representing what the current place is \"within\"."
   (cl-case major-mode
     (Info-mode
@@ -194,14 +194,14 @@ returns nil."
                    (beginning-of-defun)
                    (buffer-substring (point-at-bol) (point-at-eol)))))))
 
-(defun dogears--format-record (record)
+(defun dog-ears--format-record (record)
   "Return bookmark RECORD formatted."
   (pcase-let* ((`(,manual ,relevance ,within ,line ,mode ,buffer ,position ,dir)
-                (dogears--format-record-list record)))
+                (dog-ears--format-record-list record)))
     (format "%s [%9s]  (%25s)  \"%25s\"  %12s  %s:%s\\%s"
             manual relevance within line mode buffer position dir)))
 
-(defun dogears--format-record-list (record)
+(defun dog-ears--format-record-list (record)
   "Return a list of elements in RECORD formatted."
   (pcase-let* ((`(,name . ,(map filename position line within mode manual)) record)
                (buffer (copy-sequence
@@ -209,8 +209,8 @@ returns nil."
                             (file-name-nondirectory filename)
                           name)))
                (line (truncate-string-to-width
-                      (string-trim (copy-sequence line)) dogears-line-width))
-               (relevance (dogears--relevance record))
+                      (string-trim (copy-sequence line)) dog-ears-line-width))
+               (relevance (dog-ears--relevance record))
                (dir))
     ;; NOTE: To avoid weird "invalid face" errors that may result from adding text
     ;; properties to strings every time this function is called, we copy all strings.
@@ -242,13 +242,13 @@ returns nil."
                             'append line)
     (list manual relevance within line mode buffer position dir)))
 
-(defun dogears--relevance (record)
+(defun dog-ears--relevance (record)
   "Return the relevance string for RECORD."
   (pcase-let* ((`(,name . ,(map filename within mode)) record))
     (when filename
       (setf filename (expand-file-name filename)))
-    (cond ((when-let ((now-within (or (funcall dogears-within-function)
-                                      (dogears--within)
+    (cond ((when-let ((now-within (or (funcall dog-ears-within-function)
+                                      (dog-ears--within)
                                       name)))
              (equal within now-within))
            "definition")
@@ -275,12 +275,12 @@ returns nil."
            "Info")
           (t ""))))
 
-(defun dogears--ignored-mode-p ()
+(defun dog-ears--ignored-mode-p ()
   "Return non-nil if current buffer's major mode is ignored.
-Compares against modes in `dogears-ignore-modes'."
-  (member major-mode dogears-ignore-modes))
+Compares against modes in `dog-ears-ignore-modes'."
+  (member major-mode dog-ears-ignore-modes))
 
-(defun dogears--which-function ()
+(defun dog-ears--which-function ()
   "Call `which-function' while preventing it from using `add-log-current-defun'."
   (cl-letf (((symbol-function 'add-log-current-defun) #'ignore))
     (which-function)))
@@ -289,41 +289,41 @@ Compares against modes in `dogears-ignore-modes'."
 
 (require 'tabulated-list)
 
-(defvar dogears-list-mode-map
+(defvar dog-ears-list-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
-    (define-key map (kbd "RET") #'dogears-list-go)
-    (define-key map (kbd "k") #'dogears-list-delete)
+    (define-key map (kbd "RET") #'dog-ears-list-go)
+    (define-key map (kbd "k") #'dog-ears-list-delete)
     map))
 
-(defvar dogears-list-called-from nil
-  "Buffer that `dogears-list' was called from.")
+(defvar dog-ears-list-called-from nil
+  "Buffer that `dog-ears-list' was called from.")
 
-(defun dogears-list-go ()
+(defun dog-ears-list-go ()
   "Go to place at point."
   (interactive)
-  (dogears-go (tabulated-list-get-id)))
+  (dog-ears-go (tabulated-list-get-id)))
 
-(defun dogears-list-delete ()
+(defun dog-ears-list-delete ()
   "Delete entry at point."
   (interactive)
   (let ((place (tabulated-list-get-id)))
-    (setf dogears-list (cl-delete place dogears-list)))
+    (setf dog-ears-list (cl-delete place dog-ears-list)))
   (tabulated-list-revert))
 
 ;;;###autoload
-(defun dogears-list ()
-  "Show dogears list."
+(defun dog-ears-list ()
+  "Show dog-ears list."
   (interactive)
   (let ((called-from (current-buffer)))
-    (with-current-buffer (get-buffer-create "*Dogears List*")
-      (setf dogears-list-called-from called-from)
-      (dogears-list-mode)
+    (with-current-buffer (get-buffer-create "*Dog-Ears List*")
+      (setf dog-ears-list-called-from called-from)
+      (dog-ears-list-mode)
       (pop-to-buffer (current-buffer)))))
 
-(define-derived-mode dogears-list-mode tabulated-list-mode
-  "Dogears-List"
-  :group 'dogears
+(define-derived-mode dog-ears-list-mode tabulated-list-mode
+  "Dog-Ears-List"
+  :group 'dog-ears
   (setf tabulated-list-format (vector
                                '("#" 3 (lambda (a b)
                                          (< (string-to-number (elt (cadr a) 0))
@@ -340,24 +340,24 @@ Compares against modes in `dogears-ignore-modes'."
   (add-hook 'tabulated-list-revert-hook
             (lambda ()
               (setf tabulated-list-entries
-                    (with-current-buffer (or dogears-list-called-from
+                    (with-current-buffer (or dog-ears-list-called-from
                                              (current-buffer))
-                      (dogears-list--entries))))
+                      (dog-ears-list--entries))))
             nil 'local)
   (tabulated-list-init-header)
   (tabulated-list-revert))
 
-(defun dogears-list--entries ()
+(defun dog-ears-list--entries ()
   "Return `tabulated-list-entries'."
-  (cl-loop for place in dogears-list
+  (cl-loop for place in dog-ears-list
            for i from 0
            collect (list place
                          (cl-coerce (cons (number-to-string i)
-                                          (dogears--format-record-list place))
+                                          (dog-ears--format-record-list place))
                                     'vector))))
 
 ;;;; Footer
 
-(provide 'dogears)
+(provide 'dog-ears)
 
-;;; dogears.el ends here
+;;; dog-ears.el ends here
