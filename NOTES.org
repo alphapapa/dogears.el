@@ -1,0 +1,28 @@
+#+TITLE: Dogears.el notes
+
+* Ideas
+
+** Use Emacs bookmarks internally
+
+Like Burly, we can use Emacs bookmarks to save and restore places in mode-specific ways, without actually saving them to Emacs bookmarks.
+
+** Tabulated list view
+
+Should be sortable by recency, relevance (e.g. same buffer/file, same directory, same project, same mode, etc.)
+
+** Sidebar history
+
+Maybe just showing the tabulated list view in a side window.  Would be helpful to see a live-updated list of dogeared places.
+
+** Completion
+
+Similar to how Bufler uses prefixed/pathed completion.  I can imagine a format like:
+
+#+BEGIN_EXAMPLE
+  (let ((variable value)))  ((defun foo (bar baz b...)  foo.el:47      (Project)
+  LINE SUBSTRING            CONTEXT (here, in a defun)  FILENAME:LINE  RELEVANCE
+#+END_EXAMPLE
+
+** Hooks, advice, and timers
+
+The global minor mode would use hooks, advice, and a timer to dogear places when the user does certain things.
