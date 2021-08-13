@@ -96,8 +96,9 @@ activated."
 ;;;; Commands
 
 (define-minor-mode dogears-mode
-  "Never lose your place again.  Dogears mode keeps track of
-where you've been and helps you easily find your way back."
+  "Never lose your place again.
+Dogears mode keeps track of where you've been and helps you
+easily find your way back."
   :global t
   (if dogears-mode
       (progn
