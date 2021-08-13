@@ -203,7 +203,7 @@ returns nil."
   (pcase-let* ((`(,name . ,(map filename position line within mode manual)) record)
                (buffer (copy-sequence
                         (if filename
-                            (file-name-nondirectory filename )
+                            (file-name-nondirectory filename)
                           name)))
                (line (truncate-string-to-width
                       (string-trim (copy-sequence line)) dogears-line-width))
@@ -220,8 +220,7 @@ returns nil."
               dir (cl-loop for d in dir
                            concat (truncate-string-to-width d 10)
                            concat "\\")
-              dir (propertize dir 'face 'font-lock-comment-face)
-              )
+              dir (propertize dir 'face 'font-lock-comment-face))
       (setf dir ""))
     (if within
         (progn
@@ -334,9 +333,10 @@ Compares against modes in `dogears-ignore-modes'."
                       (dogears-list--entries))))
             nil 'local)
   (tabulated-list-init-header)
-  (setf tabulated-list-entries (with-current-buffer (or dogears-list-called-from
-                                                        (current-buffer))
-                                 (dogears-list--entries)))
+  (setf tabulated-list-entries
+        (with-current-buffer (or dogears-list-called-from
+                                 (current-buffer))
+          (dogears-list--entries)))
   (tabulated-list-revert))
 
 (defun dogears-list--entries ()
