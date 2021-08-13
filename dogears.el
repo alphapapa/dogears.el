@@ -35,6 +35,7 @@
 (require 'project)
 (require 'seq)
 (require 'subr-x)
+(require 'which-func)
 
 ;;;; Variables
 
@@ -75,6 +76,12 @@ activated."
   "How many characters from a place's line to show."
   :type 'integer)
 
+(defcustom dogears-within-function #'which-function
+  "Function that returns what a place is \"within\"."
+  :type '(choice (function-item which-function)
+                 (function-item dogears--within)
+                 (function :tag "Custom function")))
+
 ;;;; Commands
 
 (define-minor-mode dogears-mode
@@ -109,12 +116,11 @@ where you've been and helps you easily find your way back."
           ;; ourselves.  And we want every record to have one as its
           ;; first element, for consistency.
           (push "" record))
-        (when-let ((def (dogears--within)))
-          ;; Save hierarchical context with `beginning-of-defun'.
-          ;; TODO: Make this more flexible.
-          (setf (map-elt (cdr record) 'within) def))
-        (setf (map-elt (cdr record) 'mode) major-mode)
-        (setf (map-elt (cdr record) 'line) (buffer-substring (point-at-bol) (point-at-eol)))
+        (when-let ((within (funcall dogears-within-function)))
+          (setf (map-elt (cdr record) 'within) within))
+        (setf (map-elt (cdr record) 'mode) major-mode
+              (map-elt (cdr record) 'line) (buffer-substring (point-at-bol)
+                                                             (point-at-eol)))
         (push record dogears-list)
         (setf dogears-list (delete-dups dogears-list)
               dogears-list (seq-take dogears-list dogears-limit)))
