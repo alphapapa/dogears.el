@@ -57,7 +57,7 @@ These are advised when `dogears-mode' is activated."
   :type '(repeat function))
 
 (defcustom dogears-hooks
-  '(imenu-after-jump-hook window-configuration-change-hook)
+  '(imenu-after-jump-hook)
   "Hooks which should dogear a place when run.
 Dogears adds itself to these hooks when `dogears-mode' is
 activated."
@@ -65,10 +65,14 @@ activated."
 
 (defcustom dogears-ignore-places-functions
   (list #'minibufferp
-        (lambda ()
-          (eq major-mode 'dogears-list-mode)))
+        #'dogears--ignored-mode-p)
   "Don't remember any places for which any of these functions return non-nil."
   :type '(repeat function))
+
+(defcustom dogears-ignore-modes
+  '(dogears-list-mode fundamental-mode helm-major-mode)
+  "Don't remember any places in buffers in or derived from these modes."
+  :type '(repeat symbol))
 
 (defcustom dogears-idle 10
   "Remember place when Emacs is idle for this many seconds."
@@ -121,6 +125,8 @@ where you've been and helps you easily find your way back."
                            (funcall bookmark-make-record-function))
                          (dogears--buffer-record))))
         (progn
+          (setf (map-elt (cdr record) 'manual)
+                (if (called-interactively-p 'interactive) "✓" ""))
           (unless (stringp (car record))
             ;; Like `bookmark-make-record', we may have to add a string
             ;; ourselves.  And we want every record to have one as its
@@ -185,7 +191,7 @@ returns nil."
 
 (defun dogears--format-record-list (record)
   "Return a list of elements in RECORD formatted."
-  (pcase-let* ((`(,name . ,(map filename position line within mode)) record)
+  (pcase-let* ((`(,name . ,(map filename position line within mode manual)) record)
                (buffer (copy-sequence
                         (if filename
                             (file-name-nondirectory filename )
@@ -196,8 +202,9 @@ returns nil."
                (dir))
     ;; NOTE: To avoid weird "invalid face" errors that may result from adding text
     ;; properties to strings every time this function is called, we copy all strings.
-    (when position
-      (setf position (number-to-string position)))
+    (if position
+        (setf position (number-to-string position))
+      (setf position ""))
     (if filename
         (setf dir (split-string (file-name-directory filename) "/" t)
               dir (nreverse dir)
@@ -222,7 +229,7 @@ returns nil."
           mode (propertize (symbol-name mode) 'face 'font-lock-type-face))
     (add-face-text-property 0 (length line) '(:inherit (font-lock-string-face))
                             'append line)
-    (list relevance within line mode buffer position dir)))
+    (list manual relevance within line mode buffer position dir)))
 
 (defun dogears--relevance (record)
   "Return the relevance string for RECORD."
@@ -253,6 +260,12 @@ returns nil."
            "help")
           (t ""))))
 
+(defun dogears--ignored-mode-p ()
+  "Return non-nil if current buffer's major mode is ignored.
+Compares against modes in `dogears-ignore-modes'."
+  (or (member major-mode dogears-ignore-modes)
+      (apply #'derived-mode-p dogears-ignore-modes)))
+
 ;;;; Tabulated list mode
 
 (require 'tabulated-list)
@@ -282,11 +295,12 @@ returns nil."
                                '("#" 3 (lambda (a b)
                                          (< (string-to-number (elt (cadr a) 0))
                                             (string-to-number (elt (cadr b) 0)))))
+                               (list (propertize "✓" 'help-echo "Manually remembered") 1 t)
                                '("Relevance" 9 t :right-align t)
                                '("Within" 25 t)
                                '("Line" 25 t)
                                '("Mode" 17 t :right-align t)
-                               '("Buffer" 25 t :right-align t)
+                               '("Buffer" 15 t :right-align t)
                                '("Pos" 4)
                                '("Directory" 25 t))
         tabulated-list-sort-key '("#" . nil))
