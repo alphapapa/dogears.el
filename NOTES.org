@@ -26,3 +26,7 @@ Similar to how Bufler uses prefixed/pathed completion.  I can imagine a format l
 ** Hooks, advice, and timers
 
 The global minor mode would use hooks, advice, and a timer to dogear places when the user does certain things.
+
+** which-func
+
+viz mentioned that this might be useful for context.
