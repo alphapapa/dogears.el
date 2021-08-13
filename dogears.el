@@ -197,10 +197,10 @@ returns nil."
 
 (defun dogears--format-record (record)
   "Return bookmark RECORD formatted."
-  (pcase-let* ((`(,relevance ,within ,line ,mode ,buffer ,position ,dir)
+  (pcase-let* ((`(,manual ,relevance ,within ,line ,mode ,buffer ,position ,dir)
                 (dogears--format-record-list record)))
-    (format "[%10s]  (%25s)  \"%25s\"  %17s  %s:%s\\%s"
-            relevance within line mode buffer position dir)))
+    (format "%s [%9s]  (%25s)  \"%25s\"  %17s  %s:%s\\%s"
+            manual relevance within line mode buffer position dir)))
 
 (defun dogears--format-record-list (record)
   "Return a list of elements in RECORD formatted."
