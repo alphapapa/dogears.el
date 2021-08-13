@@ -55,7 +55,8 @@
 These are advised when `dogears-mode' is activated."
   :type '(repeat function))
 
-(defcustom dogears-hooks nil
+(defcustom dogears-hooks
+  '(imenu-after-jump-hook)
   "Hooks which should dogear a place when run.
 Dogears adds itself to these hooks when `dogears-mode' is
 activated."
@@ -117,7 +118,8 @@ where you've been and helps you easily find your way back."
         (push record dogears-list)
         (setf dogears-list (delete-dups dogears-list)
               dogears-list (seq-take dogears-list dogears-limit)))
-    (message "Dogears: Couldn't dogear this place")))
+    (when (called-interactively-p 'interactive)
+      (message "Dogears: Couldn't dogear this place"))))
 
 (defun dogears-go ()
   "Go to a dogeared place with completion."
@@ -155,8 +157,8 @@ where you've been and helps you easily find your way back."
                          concat "\\")))
     (when within
       (setf within (truncate-string-to-width within 25)))
-    (format "[%10s] \"%15s\"  (%25s)  %14s  %s:%s\\%s"
-            relevance line within mode base position dir)))
+    (format "[%10s]  (%25s)  \"%15s\"  %14s  %s:%s\\%s"
+            relevance within line mode base position dir)))
 
 (defun dogears--relevance (record)
   "Return the relevance string for RECORD."
@@ -175,8 +177,8 @@ where you've been and helps you easily find your way back."
              (equal filename (buffer-file-name)))
            "file")
           ((when filename
-             (equal (project-current nil (file-name-directory filename))
-                    (project-current)))
+             (when-let ((project (project-current)))
+               (equal project (project-current nil (file-name-directory filename)))))
            "project")
           ((when filename
              (equal (file-name-directory filename) default-directory))
