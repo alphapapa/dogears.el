@@ -290,6 +290,7 @@ Compares against modes in `dogears-ignore-modes'."
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
     (define-key map (kbd "RET") #'dogears-list-go)
+    (define-key map (kbd "k") #'dogears-list-delete)
     map))
 
 (defvar dogears-list-called-from nil
@@ -299,6 +300,13 @@ Compares against modes in `dogears-ignore-modes'."
   "Go to place at point."
   (interactive)
   (dogears-go (tabulated-list-get-id)))
+
+(defun dogears-list-delete ()
+  "Delete entry at point."
+  (interactive)
+  (let ((place (tabulated-list-get-id)))
+    (setf dogears-list (cl-delete place dogears-list)))
+  (tabulated-list-revert))
 
 (defun dogears-list ()
   "Show dogears list."
@@ -333,10 +341,6 @@ Compares against modes in `dogears-ignore-modes'."
                       (dogears-list--entries))))
             nil 'local)
   (tabulated-list-init-header)
-  (setf tabulated-list-entries
-        (with-current-buffer (or dogears-list-called-from
-                                 (current-buffer))
-          (dogears-list--entries)))
   (tabulated-list-revert))
 
 (defun dogears-list--entries ()
