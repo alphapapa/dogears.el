@@ -63,6 +63,11 @@ Dogears adds itself to these hooks when `dogears-mode' is
 activated."
   :type '(repeat variable))
 
+(defcustom dogears-ignore-places-functions
+  (list #'minibufferp)
+  "Don't remember any places for which any of these functions return non-nil."
+  :type '(repeat function))
+
 (defcustom dogears-idle 10
   "Remember place when Emacs is idle for this many seconds."
   :type '(choice (number :tag "Seconds")
@@ -95,7 +100,8 @@ where you've been and helps you easily find your way back."
         (dolist (hook dogears-hooks)
           (add-hook hook #'dogears-remember))
         (when dogears-idle
-          (setf dogears-idle-timer (run-with-idle-timer dogears-idle 'repeat #'dogears-remember))))
+          (setf dogears-idle-timer
+                (run-with-idle-timer dogears-idle 'repeat #'dogears-remember))))
     ;; Disable mode.
     (dolist (fn dogears-functions)
       (advice-remove fn #'dogears-remember))
@@ -108,24 +114,26 @@ where you've been and helps you easily find your way back."
 (defun dogears-remember (&rest _ignore)
   "Remember the current place."
   (interactive)
-  (if-let ((record (ignore-errors
-                     (funcall bookmark-make-record-function))))
-      (progn
-        (unless (stringp (car record))
-          ;; Like `bookmark-make-record', we may have to add a string
-          ;; ourselves.  And we want every record to have one as its
-          ;; first element, for consistency.
-          (push "" record))
-        (when-let ((within (funcall dogears-within-function)))
-          (setf (map-elt (cdr record) 'within) within))
-        (setf (map-elt (cdr record) 'mode) major-mode
-              (map-elt (cdr record) 'line) (buffer-substring (point-at-bol)
-                                                             (point-at-eol)))
-        (push record dogears-list)
-        (setf dogears-list (delete-dups dogears-list)
-              dogears-list (seq-take dogears-list dogears-limit)))
-    (when (called-interactively-p 'interactive)
-      (message "Dogears: Couldn't dogear this place"))))
+  (unless (seq-some #'funcall dogears-ignore-places-functions)
+    (if-let ((record (or (ignore-errors
+                           (funcall bookmark-make-record-function))
+                         (dogears--buffer-record))))
+        (progn
+          (unless (stringp (car record))
+            ;; Like `bookmark-make-record', we may have to add a string
+            ;; ourselves.  And we want every record to have one as its
+            ;; first element, for consistency.
+            (push "" record))
+          (when-let ((within (funcall dogears-within-function)))
+            (setf (map-elt (cdr record) 'within) within))
+          (setf (map-elt (cdr record) 'mode) major-mode
+                (map-elt (cdr record) 'line) (buffer-substring (point-at-bol)
+                                                               (point-at-eol)))
+          (push record dogears-list)
+          (setf dogears-list (delete-dups dogears-list)
+                dogears-list (seq-take dogears-list dogears-limit)))
+      (when (called-interactively-p 'interactive)
+        (message "Dogears: Couldn't dogear this place")))))
 
 (defun dogears-go ()
   "Go to a dogeared place with completion."
@@ -135,9 +143,24 @@ where you've been and helps you easily find your way back."
                               collect (cons key record)))
          (choice (completing-read "Place: " collection nil t))
          (record (alist-get choice collection nil nil #'equal)))
-    (bookmark-jump record)))
+    (or (ignore-errors
+          (bookmark-jump record))
+        (when-let ((buffer (map-elt (cdr record) 'buffer)))
+          (if (buffer-live-p buffer)
+              (switch-to-buffer buffer)
+            (user-error "Buffer no longer exists: %s" buffer))))))
 
 ;;;; Functions
+
+(defun dogears--buffer-record ()
+  "Return a bookmark-like record for the current buffer.
+Intended as a fallback for when `bookmark-make-record-function'
+returns nil."
+  (list (buffer-name)
+        (cons 'buffer (current-buffer))
+        (cons 'within (buffer-name))
+        (cons 'mode major-mode)
+        (cons 'position (point))))
 
 (defun dogears--within ()
   "Return string representing what the current place is \"within\"."
@@ -149,10 +172,11 @@ where you've been and helps you easily find your way back."
 (defun dogears--format-record (record)
   "Return bookmark RECORD formatted."
   (pcase-let* ((`(,name . ,(map filename position line within mode)) record)
-               (base (if filename
-                         (file-name-nondirectory filename )
-                       name))
-               (line (truncate-string-to-width (string-trim line) dogears-line-width))
+               (location (if filename
+                             (file-name-nondirectory filename )
+                           name))
+               (line (truncate-string-to-width
+                      (string-trim line) dogears-line-width))
                (relevance (dogears--relevance record))
                (dir))
     (when filename
@@ -160,11 +184,19 @@ where you've been and helps you easily find your way back."
             dir (nreverse dir)
             dir (cl-loop for d in dir
                          concat (truncate-string-to-width d 10)
-                         concat "\\")))
+                         concat "\\")
+            dir (propertize dir 'face 'font-lock-comment-face)))
     (when within
-      (setf within (truncate-string-to-width within 25)))
-    (format "[%10s]  (%25s)  \"%15s\"  %14s  %s:%s\\%s"
-            relevance within line mode base position dir)))
+      (setf within (truncate-string-to-width within 25))
+      (add-face-text-property 0 (length within) 'face 'append within))
+    ;; Add more faces.
+    (setf location (propertize location 'face 'font-lock-function-name-face)
+          relevance (propertize relevance 'face 'font-lock-keyword-face)
+          mode (propertize (symbol-name mode) 'face 'font-lock-type-face))
+    (add-face-text-property 0 (length line) '(:inherit font-lock-string-face)
+                            'append line)
+    (format "[%10s]  (%25s)  \"%25s\"  %17s  %s:%s\\%s"
+            relevance within line mode location position dir)))
 
 (defun dogears--relevance (record)
   "Return the relevance string for RECORD."
