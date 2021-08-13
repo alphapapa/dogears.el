@@ -194,7 +194,7 @@ returns nil."
   "Return bookmark RECORD formatted."
   (pcase-let* ((`(,manual ,relevance ,within ,line ,mode ,buffer ,position ,dir)
                 (dogears--format-record-list record)))
-    (format "%s [%9s]  (%25s)  \"%25s\"  %17s  %s:%s\\%s"
+    (format "%s [%9s]  (%25s)  \"%25s\"  %12s  %s:%s\\%s"
             manual relevance within line mode buffer position dir)))
 
 (defun dogears--format-record-list (record)
@@ -234,7 +234,7 @@ returns nil."
     ;; Add more faces.
     (setf buffer (propertize buffer 'face 'font-lock-constant-face)
           relevance (propertize relevance 'face 'font-lock-keyword-face)
-          mode (propertize (symbol-name mode) 'face 'font-lock-type-face))
+          mode (propertize (string-remove-suffix "-mode" (symbol-name mode)) 'face 'font-lock-type-face))
     (add-face-text-property 0 (length line) '(:inherit (font-lock-string-face))
                             'append line)
     (list manual relevance within line mode buffer position dir)))
@@ -317,29 +317,35 @@ Compares against modes in `dogears-ignore-modes'."
                                          (< (string-to-number (elt (cadr a) 0))
                                             (string-to-number (elt (cadr b) 0)))))
                                (list (propertize "✓" 'help-echo "Manually remembered") 1 t)
-                               '("Relevance" 9 t :right-align t)
+                               '("Relevance" 10 t :right-align t)
                                '("Within" 25 t)
                                '("Line" 25 t)
-                               '("Mode" 17 t :right-align t)
+                               '("Mode" 12 t :right-align t)
                                '("Buffer" 15 t :right-align t)
-                               '("Pos" 4)
+                               '("Pos" 5)
                                '("Directory" 25 t))
         tabulated-list-sort-key '("#" . nil))
-  (add-hook 'tabulated-list-revert-hook #'dogears-list--set-entries nil 'local)
+  (add-hook 'tabulated-list-revert-hook
+            (lambda ()
+              (setf tabulated-list-entries
+                    (with-current-buffer (or dogears-list-called-from
+                                             (current-buffer))
+                      (dogears-list--entries))))
+            nil 'local)
   (tabulated-list-init-header)
-  (with-current-buffer dogears-list-called-from
-    (dogears-list--set-entries))
+  (setf tabulated-list-entries (with-current-buffer (or dogears-list-called-from
+                                                        (current-buffer))
+                                 (dogears-list--entries)))
   (tabulated-list-revert))
 
-(defun dogears-list--set-entries ()
-  "Set `tabulated-list-entries'."
-  (setf tabulated-list-entries
-        (cl-loop for place in dogears-list
-                 for i from 0 to 20
-                 collect (list place
-                               (cl-coerce (cons (number-to-string i)
-                                                (dogears--format-record-list place))
-                                          'vector)))))
+(defun dogears-list--entries ()
+  "Return `tabulated-list-entries'."
+  (cl-loop for place in dogears-list
+           for i from 0 to 20
+           collect (list place
+                         (cl-coerce (cons (number-to-string i)
+                                          (dogears--format-record-list place))
+                                    'vector))))
 
 ;;;; Footer
 
