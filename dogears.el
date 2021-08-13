@@ -350,7 +350,7 @@ Compares against modes in `dogears-ignore-modes'."
 (defun dogears-list--entries ()
   "Return `tabulated-list-entries'."
   (cl-loop for place in dogears-list
-           for i from 0 to 20
+           for i from 0
            collect (list place
                          (cl-coerce (cons (number-to-string i)
                                           (dogears--format-record-list place))
