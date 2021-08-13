@@ -22,6 +22,10 @@ This shows the ~dogears-list~ buffer, in which you can browse entries, sort them
 
 [[images/screenshot.png]]
 
+This screenshot shows it while using the theme =doom-solarized-dark=, and the =Line= column shows some source code snippets with highlighting by [[https://github.com/alphapapa/prism.el][prism.el]].
+
+[[images/screenshot2.png]]
+
 * Contents                                                         :noexport:
 :PROPERTIES:
 :TOC:      :include siblings
