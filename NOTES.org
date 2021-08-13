@@ -30,3 +30,7 @@ The global minor mode would use hooks, advice, and a timer to dogear places when
 ** which-func
 
 viz mentioned that this might be useful for context.
+
+** Back/forward commands
+
+Similar to [[https://github.com/tcw165/history][history.el]], that could be useful.
