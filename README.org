@@ -1,0 +1,104 @@
+#+TITLE: dogears.el
+
+#+PROPERTY: LOGGING nil
+
+# Note: This readme works with the org-make-toc <https://github.com/alphapapa/org-make-toc> package, which automatically updates the table of contents.
+
+# [[https://melpa.org/#/package-name][file:https://melpa.org/packages/dogears-badge.svg]] [[https://stable.melpa.org/#/package-name][file:https://stable.melpa.org/packages/dogears-badge.svg]]
+
+/Never lose your place in Emacs again!/
+
+This library automatically and smartly remembers where you've been, in and across buffers, and helps you quickly return to any of those places.  It uses the Emacs bookmarks system internally (but without modifying the ~bookmarks-alist~) to save and restore places with mode-specific functionality.  As usual, it's configurable to suit each user.
+
+* Screenshots
+
+[[images/screenshot.png]]
+
+* Contents                                                         :noexport:
+:PROPERTIES:
+:TOC:      :include siblings
+:END:
+:CONTENTS:
+- [[#installation][Installation]]
+- [[#usage][Usage]]
+- [[#changelog][Changelog]]
+:END:
+
+* Installation
+:PROPERTIES:
+:TOC:      :depth 0
+:END:
+
+** MELPA
+
+This library isn't yet on MELPA.
+
+# If you installed from MELPA, you're done.  Just run one of the commands below.
+
+** Quelpa
+
+The recommended way to install is with [[https://github.com/quelpa/quelpa-use-package][quelpa-use-package]], like this:
+
+#+BEGIN_SRC elisp
+  ;; Install and load `quelpa-use-package'.
+  (package-install 'quelpa-use-package)
+  (require 'quelpa-use-package)
+
+  (use-package dogears
+    :quelpa (dogears :fetcher github :repo "alphapapa/dogears.el"))
+#+END_SRC
+
+** Manual
+
+If you want to install it manually, it's simple enough, but you should know what you're doing, and you're on your own.
+
+
+* Usage
+:PROPERTIES:
+:TOC:      :depth 0
+:ID:       986e8593-3ed1-4716-8423-788e8a178aa3
+:END:
+
+| Command          | Action                                                     |
+|------------------+------------------------------------------------------------|
+| =dogears-mode=     | Automatically remember places, according to configuration. |
+| =dogears-remember= | Manually remember the place at point.                      |
+| =dogears-go=       | Go to a place, selected with completion.                   |
+| =dogears-list=     | Show places in a tabulated list.                           |
+
+** Tips
+
++ You can customize settings in the =dogears= group.
+
+* Changelog
+:PROPERTIES:
+:TOC:      :depth 0
+:END:
+
+** 0.1-pre
+
+Not yet tagged.
+
+# * Credits
+
+* Development
+:PROPERTIES:
+:TOC:      :ignore (this)
+:END:
+
+Bug reports, feature requests, suggestions — /oh my/!
+
+* License
+:PROPERTIES:
+:TOC:      :ignore (this)
+:END:
+
+GPLv3
+
+# Local Variables:
+# eval: (require 'org-make-toc)
+# before-save-hook: org-make-toc
+# org-export-with-properties: ()
+# org-export-with-title: t
+# End:
+
