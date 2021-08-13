@@ -57,14 +57,16 @@ These are advised when `dogears-mode' is activated."
   :type '(repeat function))
 
 (defcustom dogears-hooks
-  '(imenu-after-jump-hook)
+  '(imenu-after-jump-hook window-configuration-change-hook)
   "Hooks which should dogear a place when run.
 Dogears adds itself to these hooks when `dogears-mode' is
 activated."
   :type '(repeat variable))
 
 (defcustom dogears-ignore-places-functions
-  (list #'minibufferp)
+  (list #'minibufferp
+        (lambda ()
+          (eq major-mode 'dogears-list-mode)))
   "Don't remember any places for which any of these functions return non-nil."
   :type '(repeat function))
 
@@ -124,7 +126,10 @@ where you've been and helps you easily find your way back."
             ;; ourselves.  And we want every record to have one as its
             ;; first element, for consistency.
             (push "" record))
-          (when-let ((within (funcall dogears-within-function)))
+          (unless (map-elt (cdr record) 'buffer)
+            (setf (map-elt (cdr record) 'buffer) (buffer-name)))
+          (when-let ((within (or (funcall dogears-within-function)
+                                 (dogears--within))))
             (setf (map-elt (cdr record) 'within) within))
           (setf (map-elt (cdr record) 'mode) major-mode
                 (map-elt (cdr record) 'line) (buffer-substring (point-at-bol)
@@ -135,20 +140,21 @@ where you've been and helps you easily find your way back."
       (when (called-interactively-p 'interactive)
         (message "Dogears: Couldn't dogear this place")))))
 
-(defun dogears-go ()
-  "Go to a dogeared place with completion."
-  (interactive)
-  (let* ((collection (cl-loop for record in dogears-list
-                              for key = (dogears--format-record record)
-                              collect (cons key record)))
-         (choice (completing-read "Place: " collection nil t))
-         (record (alist-get choice collection nil nil #'equal)))
-    (or (ignore-errors
-          (bookmark-jump record))
-        (when-let ((buffer (map-elt (cdr record) 'buffer)))
-          (if (buffer-live-p buffer)
-              (switch-to-buffer buffer)
-            (user-error "Buffer no longer exists: %s" buffer))))))
+(defun dogears-go (place)
+  "Go to dogeared PLACE.
+Interactively, select PLACE with completion.  PLACE should be a
+bookmark record."
+  (interactive (let* ((collection (cl-loop for place in dogears-list
+                                           for key = (dogears--format-record place)
+                                           collect (cons key place)))
+                      (choice (completing-read "Place: " collection nil t)))
+                 (list (alist-get choice collection nil nil #'equal))))
+  (or (ignore-errors
+        (bookmark-jump place))
+      (when-let ((buffer (map-elt (cdr place) 'buffer)))
+        (if (buffer-live-p buffer)
+            (switch-to-buffer buffer)
+          (user-error "Buffer no longer exists: %s" buffer)))))
 
 ;;;; Functions
 
@@ -158,6 +164,7 @@ Intended as a fallback for when `bookmark-make-record-function'
 returns nil."
   (list (buffer-name)
         (cons 'buffer (current-buffer))
+        (cons 'location (buffer-name))
         (cons 'within (buffer-name))
         (cons 'mode major-mode)
         (cons 'position (point))))
@@ -171,32 +178,51 @@ returns nil."
 
 (defun dogears--format-record (record)
   "Return bookmark RECORD formatted."
+  (pcase-let* ((`(,relevance ,within ,line ,mode ,buffer ,position ,dir)
+                (dogears--format-record-list record)))
+    (format "[%10s]  (%25s)  \"%25s\"  %17s  %s:%s\\%s"
+            relevance within line mode buffer position dir)))
+
+(defun dogears--format-record-list (record)
+  "Return a list of elements in RECORD formatted."
   (pcase-let* ((`(,name . ,(map filename position line within mode)) record)
-               (location (if filename
-                             (file-name-nondirectory filename )
-                           name))
+               (buffer (copy-sequence
+                        (if filename
+                            (file-name-nondirectory filename )
+                          name)))
                (line (truncate-string-to-width
-                      (string-trim line) dogears-line-width))
+                      (string-trim (copy-sequence line)) dogears-line-width))
                (relevance (dogears--relevance record))
                (dir))
-    (when filename
-      (setf dir (split-string (file-name-directory filename) "/" t)
-            dir (nreverse dir)
-            dir (cl-loop for d in dir
-                         concat (truncate-string-to-width d 10)
-                         concat "\\")
-            dir (propertize dir 'face 'font-lock-comment-face)))
-    (when within
-      (setf within (truncate-string-to-width within 25))
-      (add-face-text-property 0 (length within) 'face 'append within))
+    ;; NOTE: To avoid weird "invalid face" errors that may result from adding text
+    ;; properties to strings every time this function is called, we copy all strings.
+    (when position
+      (setf position (number-to-string position)))
+    (if filename
+        (setf dir (split-string (file-name-directory filename) "/" t)
+              dir (nreverse dir)
+              dir (cl-loop for d in dir
+                           concat (truncate-string-to-width d 10)
+                           concat "\\")
+              dir (propertize dir 'face 'font-lock-comment-face)
+              )
+      (setf dir ""))
+    (if within
+        (progn
+          ;; Does `truncate-string-to-width' return a copy of the string if it's already
+          ;; that short?  Who knows.  So we have to be sure, because we're modifying the
+          ;; properties of it, and we don't want to do that to the original.
+          (setf within (copy-sequence within)
+                within (truncate-string-to-width within 25))
+          (add-face-text-property 0 (length within) '(:inherit (font-lock-function-name-face)) 'append within))
+      (setf within ""))
     ;; Add more faces.
-    (setf location (propertize location 'face 'font-lock-function-name-face)
+    (setf buffer (propertize buffer 'face 'font-lock-constant-face)
           relevance (propertize relevance 'face 'font-lock-keyword-face)
           mode (propertize (symbol-name mode) 'face 'font-lock-type-face))
-    (add-face-text-property 0 (length line) '(:inherit font-lock-string-face)
+    (add-face-text-property 0 (length line) '(:inherit (font-lock-string-face))
                             'append line)
-    (format "[%10s]  (%25s)  \"%25s\"  %17s  %s:%s\\%s"
-            relevance within line mode location position dir)))
+    (list relevance within line mode buffer position dir)))
 
 (defun dogears--relevance (record)
   "Return the relevance string for RECORD."
@@ -223,7 +249,61 @@ returns nil."
            "directory")
           ((equal mode major-mode)
            "mode")
+          ((equal mode 'help-mode)
+           "help")
           (t ""))))
+
+;;;; Tabulated list mode
+
+(require 'tabulated-list)
+
+(defvar dogears-list-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map tabulated-list-mode-map)
+    (define-key map (kbd "RET") #'dogears-list-go)
+    map))
+
+(defun dogears-list-go ()
+  "Go to place at point."
+  (interactive)
+  (dogears-go (tabulated-list-get-id)))
+
+(defun dogears-list ()
+  "Show dogears list."
+  (interactive)
+  (with-current-buffer (get-buffer-create "*Dogears List*")
+    (dogears-list-mode)
+    (pop-to-buffer (current-buffer))))
+
+(define-derived-mode dogears-list-mode tabulated-list-mode
+  "Dogears-List"
+  :group 'dogears
+  (setf tabulated-list-format (vector
+                               '("#" 3 (lambda (a b)
+                                         (< (string-to-number (elt (cadr a) 0))
+                                            (string-to-number (elt (cadr b) 0)))))
+                               '("Relevance" 9 t :right-align t)
+                               '("Within" 25 t)
+                               '("Line" 25 t)
+                               '("Mode" 17 t :right-align t)
+                               '("Buffer" 25 t :right-align t)
+                               '("Pos" 4)
+                               '("Directory" 25 t))
+        tabulated-list-sort-key '("#" . nil))
+  (add-hook 'tabulated-list-revert-hook #'dogears-list--set-entries nil 'local)
+  (tabulated-list-init-header)
+  (dogears-list--set-entries)
+  (tabulated-list-revert))
+
+(defun dogears-list--set-entries ()
+  "Set `tabulated-list-entries'."
+  (setf tabulated-list-entries
+        (cl-loop for place in dogears-list
+                 for i from 0 to 20
+                 collect (list place
+                               (cl-coerce (cons (number-to-string i)
+                                                (dogears--format-record-list place))
+                                          'vector)))))
 
 ;;;; Footer
 
