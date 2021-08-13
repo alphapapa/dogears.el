@@ -126,7 +126,7 @@ where you've been and helps you easily find your way back."
                          (dogears--buffer-record))))
         (progn
           (setf (map-elt (cdr record) 'manual)
-                (if (called-interactively-p 'interactive) "✓" ""))
+                (if (called-interactively-p 'interactive) "✓" " "))
           (unless (stringp (car record))
             ;; Like `bookmark-make-record', we may have to add a string
             ;; ourselves.  And we want every record to have one as its
@@ -146,11 +146,6 @@ where you've been and helps you easily find your way back."
                 dogears-list (seq-take dogears-list dogears-limit)))
       (when (called-interactively-p 'interactive)
         (message "Dogears: Couldn't dogear this place")))))
-
-(defun dogears--which-function ()
-  "Call `which-function' while preventing it from using `add-log-current-defun'."
-  (cl-letf (((symbol-function 'add-log-current-defun) #'ignore))
-    (which-function)))
 
 (defun dogears-go (place)
   "Go to dogeared PLACE.
@@ -246,10 +241,12 @@ returns nil."
 
 (defun dogears--relevance (record)
   "Return the relevance string for RECORD."
-  (pcase-let* ((`(,_name . ,(map filename within mode)) record))
+  (pcase-let* ((`(,name . ,(map filename within mode)) record))
     (when filename
       (setf filename (expand-file-name filename)))
-    (cond ((when-let ((now-within (dogears--within)))
+    (cond ((when-let ((now-within (or (funcall dogears-within-function)
+                                      (dogears--within)
+                                      name)))
              (equal within now-within))
            "definition")
           ((when filename
@@ -280,6 +277,11 @@ returns nil."
 Compares against modes in `dogears-ignore-modes'."
   (member major-mode dogears-ignore-modes))
 
+(defun dogears--which-function ()
+  "Call `which-function' while preventing it from using `add-log-current-defun'."
+  (cl-letf (((symbol-function 'add-log-current-defun) #'ignore))
+    (which-function)))
+
 ;;;; Tabulated list mode
 
 (require 'tabulated-list)
@@ -290,6 +292,9 @@ Compares against modes in `dogears-ignore-modes'."
     (define-key map (kbd "RET") #'dogears-list-go)
     map))
 
+(defvar dogears-list-called-from nil
+  "Buffer that `dogears-list' was called from.")
+
 (defun dogears-list-go ()
   "Go to place at point."
   (interactive)
@@ -298,9 +303,11 @@ Compares against modes in `dogears-ignore-modes'."
 (defun dogears-list ()
   "Show dogears list."
   (interactive)
-  (with-current-buffer (get-buffer-create "*Dogears List*")
-    (dogears-list-mode)
-    (pop-to-buffer (current-buffer))))
+  (let ((called-from (current-buffer)))
+    (with-current-buffer (get-buffer-create "*Dogears List*")
+      (setf dogears-list-called-from called-from)
+      (dogears-list-mode)
+      (pop-to-buffer (current-buffer)))))
 
 (define-derived-mode dogears-list-mode tabulated-list-mode
   "Dogears-List"
@@ -320,7 +327,8 @@ Compares against modes in `dogears-ignore-modes'."
         tabulated-list-sort-key '("#" . nil))
   (add-hook 'tabulated-list-revert-hook #'dogears-list--set-entries nil 'local)
   (tabulated-list-init-header)
-  (dogears-list--set-entries)
+  (with-current-buffer dogears-list-called-from
+    (dogears-list--set-entries))
   (tabulated-list-revert))
 
 (defun dogears-list--set-entries ()
