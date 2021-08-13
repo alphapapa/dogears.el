@@ -95,6 +95,7 @@ activated."
 
 ;;;; Commands
 
+;;;###autoload
 (define-minor-mode dogears-mode
   "Never lose your place again.
 Dogears mode keeps track of where you've been and helps you
@@ -118,6 +119,7 @@ easily find your way back."
       (cancel-timer dogears-idle-timer)
       (setf dogears-idle-timer nil))))
 
+;;;###autoload
 (defun dogears-remember (&rest _ignore)
   "Remember the current place."
   (interactive)
@@ -148,6 +150,7 @@ easily find your way back."
       (when (called-interactively-p 'interactive)
         (message "Dogears: Couldn't dogear this place")))))
 
+;;;###autoload
 (defun dogears-go (place)
   "Go to dogeared PLACE.
 Interactively, select PLACE with completion.  PLACE should be a
@@ -308,6 +311,7 @@ Compares against modes in `dogears-ignore-modes'."
     (setf dogears-list (cl-delete place dogears-list)))
   (tabulated-list-revert))
 
+;;;###autoload
 (defun dogears-list ()
   "Show dogears list."
   (interactive)
