@@ -71,10 +71,10 @@ activated."
 
 (defcustom dogears-ignore-modes
   '(dogears-list-mode fundamental-mode helm-major-mode)
-  "Don't remember any places in buffers in or derived from these modes."
+  "Don't remember any places in buffers in these modes."
   :type '(repeat symbol))
 
-(defcustom dogears-idle 10
+(defcustom dogears-idle 5
   "Remember place when Emacs is idle for this many seconds."
   :type '(choice (number :tag "Seconds")
                  (const :tag "Never" nil)))
@@ -87,9 +87,9 @@ activated."
   "How many characters from a place's line to show."
   :type 'integer)
 
-(defcustom dogears-within-function #'which-function
+(defcustom dogears-within-function #'dogears--which-function
   "Function that returns what a place is \"within\"."
-  :type '(choice (function-item which-function)
+  :type '(choice (function-item dogears--which-function)
                  (function-item dogears--within)
                  (function :tag "Custom function")))
 
@@ -135,16 +135,22 @@ where you've been and helps you easily find your way back."
           (unless (map-elt (cdr record) 'buffer)
             (setf (map-elt (cdr record) 'buffer) (buffer-name)))
           (when-let ((within (or (funcall dogears-within-function)
-                                 (dogears--within))))
+                                 (dogears--within)
+                                 (car record))))
             (setf (map-elt (cdr record) 'within) within))
           (setf (map-elt (cdr record) 'mode) major-mode
-                (map-elt (cdr record) 'line) (buffer-substring (point-at-bol)
-                                                               (point-at-eol)))
+                (map-elt (cdr record) 'line) (buffer-substring
+                                              (point-at-bol) (point-at-eol)))
           (push record dogears-list)
           (setf dogears-list (delete-dups dogears-list)
                 dogears-list (seq-take dogears-list dogears-limit)))
       (when (called-interactively-p 'interactive)
         (message "Dogears: Couldn't dogear this place")))))
+
+(defun dogears--which-function ()
+  "Call `which-function' while preventing it from using `add-log-current-defun'."
+  (cl-letf (((symbol-function 'add-log-current-defun) #'ignore))
+    (which-function)))
 
 (defun dogears-go (place)
   "Go to dogeared PLACE.
@@ -158,6 +164,8 @@ bookmark record."
   (or (ignore-errors
         (bookmark-jump place))
       (when-let ((buffer (map-elt (cdr place) 'buffer)))
+        (when (stringp buffer)
+          (setf buffer (get-buffer buffer)))
         (if (buffer-live-p buffer)
             (switch-to-buffer buffer)
           (user-error "Buffer no longer exists: %s" buffer)))))
@@ -177,10 +185,15 @@ returns nil."
 
 (defun dogears--within ()
   "Return string representing what the current place is \"within\"."
-  (ignore-errors
-    (save-excursion
-      (beginning-of-defun)
-      (buffer-substring (point-at-bol) (point-at-eol)))))
+  (cl-case major-mode
+    (Info-mode
+     ;; HACK: To make Info buffer records more useful, return nil so the
+     ;; bookmark name is used.
+     nil)
+    (otherwise (ignore-errors
+                 (save-excursion
+                   (beginning-of-defun)
+                   (buffer-substring (point-at-bol) (point-at-eol)))))))
 
 (defun dogears--format-record (record)
   "Return bookmark RECORD formatted."
@@ -258,13 +271,14 @@ returns nil."
            "mode")
           ((equal mode 'help-mode)
            "help")
+          ((equal mode 'Info-mode)
+           "Info")
           (t ""))))
 
 (defun dogears--ignored-mode-p ()
   "Return non-nil if current buffer's major mode is ignored.
 Compares against modes in `dogears-ignore-modes'."
-  (or (member major-mode dogears-ignore-modes)
-      (apply #'derived-mode-p dogears-ignore-modes)))
+  (member major-mode dogears-ignore-modes))
 
 ;;;; Tabulated list mode
 
