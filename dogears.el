@@ -84,7 +84,7 @@ activated."
   :type '(repeat function))
 
 (defcustom dogears-ignore-modes
-  '(dogears-list-mode fundamental-mode helm-major-mode)
+  '(fundamental-mode dogears-list-mode exwm-mode helm-major-mode)
   "Don't remember any places in buffers in these modes."
   :type '(repeat symbol))
 
@@ -271,9 +271,12 @@ returns nil."
                  (within (if within
                              (face-propertize within 'font-lock-function-name-face)
                            ""))
-                 (dir))
-      (if filename
-          (setf dir (split-string (file-name-directory filename) "/" t)
+                 ;; The filename may not always *be* a filename; e.g. somehow in
+                 ;; EWXM buffers it gets set to " - no file -", instead of just nil.
+                 (dir (when filename
+                        (file-name-directory filename))))
+      (if dir
+          (setf dir (split-string dir "/" t)
                 dir (nreverse dir)
                 dir (cl-loop for d in dir
                              concat (truncate-string-to-width d 10)
