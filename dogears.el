@@ -101,6 +101,14 @@ activated."
   "How many characters from a place's line to show."
   :type 'integer)
 
+(defcustom dogears-position-delta 100
+  ;; We use buffer positions rather than lines to avoid calculating
+  ;; `line-number-at-pos' every time a place record is made.
+  "Maximum difference between places' positions for them to be considered equal.
+If two places are within this many characters, they are
+considered the same.  (See function `dogears--equal'.)"
+  :type 'integer)
+
 (defcustom dogears-sidebar-alist
   '((side . right)
     (window-parameters
@@ -172,7 +180,7 @@ easily find your way back."
           ;; It's hard to say whether push or pushnew is the best choice.  When returning
           ;; to a dogeared place, that place gets moved to the front of the list, or it
           ;; remains where it was.  Either way, unless we allow dupes, the list changes.
-          (cl-pushnew record dogears-list :test #'equal)
+          (cl-pushnew record dogears-list :test #'dogears--equal)
           (setf dogears-list (delete-dups dogears-list)
                 dogears-list (seq-take dogears-list dogears-limit))
           (when (and dogears-update-list-buffer (buffer-live-p dogears-list-buffer))
@@ -231,6 +239,30 @@ returns nil."
         (cons 'within (buffer-name))
         (cons 'mode major-mode)
         (cons 'position (point))))
+
+(defun dogears--equal (a b)
+  "Return non-nil if places A and B are considered equal.
+A and B should be bookmark records as stored in `dogears-list'.
+They are considered equal if they have the same elements, with
+two exceptions: their `line's may differ, and their `position's
+may differ by up to `dogears-position-delta'."
+  (pcase-let* ((`(,a-name . ,(map ('filename a-filename) ('line _a-line)
+                                  ('manual a-manual) ('mode a-mode)
+                                  ('position a-position) ('within a-within)))
+                a)
+               (`(,b-name . ,(map ('filename b-filename) ('line _b-line)
+                                  ('manual b-manual) ('mode b-mode)
+                                  ('position b-position) ('within b-within)))
+                b))
+    ;; Test elements in, roughly, the order of some balance of factors
+    ;; involving what's quickest to compare and what's most likely to differ.
+    (and (equal a-mode b-mode)
+         (equal a-manual b-manual)
+         (equal a-within b-within)
+         (equal a-filename b-filename)
+         (equal a-name b-name)
+         (and a-position b-position)
+         (<= (abs (- a-position b-position)) dogears-position-delta))))
 
 (defun dogears--within ()
   "Return string representing what the current place is \"within\"."
