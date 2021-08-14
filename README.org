@@ -33,6 +33,7 @@ This screenshot shows it while using the theme =doom-solarized-dark=, and the =L
 - [[#installation][Installation]]
 - [[#usage][Usage]]
 - [[#changelog][Changelog]]
+- [[#alternatives][Alternatives]]
 :END:
 
 * Installation
@@ -97,6 +98,9 @@ Then the user can run a command to view or go to places in the list.
 | =dogears-sidebar=  | Show Dogears list in a side window.                        |
 
 ** Tips
+:PROPERTIES:
+:ID:       6a5b2fdf-1031-4801-a471-b4dd47b953c7
+:END:
 
 + You can customize settings in the =dogears= group.
 
@@ -117,6 +121,15 @@ Not yet tagged.
 :END:
 
 Bug reports, feature requests, suggestions — /oh my/!
+
+* Alternatives
+:PROPERTIES:
+:ID:       96cb74a4-8c0d-48e7-bf5a-ff5f1f7af91a
+:END:
+
+Some other, similar packages:
+
++ [[https://github.com/Overdr0ne/gumshoe][gumshoe]] :: /Gumshoe is a collection of global minor modes that quietly keep tabs on your Point movements so you can retrace your steps if you ever need a reminder of where you’ve been.  Each mode keeps a log local to some scope.  Gumshoe does not keep track of every move you make, rather, only at increments of some minimum Euclidean distance from the last tracked position, like a leash.  It will also automatically log a position if you’ve idled there for a configurable amount of time.  This package is very similar to Vim’s jump list, just generalized for Emacs./
 
 * License
 :PROPERTIES:
