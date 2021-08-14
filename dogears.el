@@ -410,11 +410,15 @@ Compares against modes in `dogears-ignore-modes'."
 (defun dogears-sidebar ()
   "Show Dogears list in a side window."
   (interactive)
-  (let ((buffer (save-window-excursion
-                  (dogears-list)
-                  (window-buffer)))
-        (display-buffer-mark-dedicated t))
-    (display-buffer-in-side-window buffer dogears-sidebar-alist)))
+  (let* ((buffer (save-window-excursion
+                   (dogears-list)
+                   (window-buffer)))
+         (display-buffer-mark-dedicated t)
+         (window (display-buffer-in-side-window buffer dogears-sidebar-alist)))
+    (when window
+      ;; t has special meaning to `set-window-dedicated-p', and I
+      ;; don't know if that's what we want.
+      (set-window-dedicated-p window 'non-nil))))
 
 (define-derived-mode dogears-list-mode tabulated-list-mode
   "Dogears-List"
