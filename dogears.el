@@ -61,6 +61,10 @@ Used in `dogears-back' and `dogears-forward'.")
   "Never lose your place again."
   :group 'convenience)
 
+(defcustom dogears-ellipsis "…"
+  "Ellipsis string used to truncate strings."
+  :type 'string)
+
 (defcustom dogears-functions nil
   "Functions which should dogear a place when called.
 These are advised when `dogears-mode' is activated."
@@ -237,8 +241,8 @@ returns nil."
   "Return bookmark RECORD formatted."
   (pcase-let* ((`(,manual ,relevance ,within ,line ,mode ,buffer ,position ,dir)
                 (dogears--format-record-list record)))
-    (format "%s [%9s]  (%25s)  \"%25s\"  %12s  %s:%s\\%s"
-            manual relevance within line mode buffer position dir)))
+    (format "%s [%9s]  (%25s)  \"%25s\"  %s %12s %s\\%s"
+            manual relevance within line buffer mode position dir)))
 
 (defun dogears--format-record-list (record)
   "Return a list of elements in RECORD formatted."
@@ -256,8 +260,7 @@ returns nil."
                                               (file-name-nondirectory filename)
                                             name)
                                           'font-lock-constant-face))
-                 (line (truncate-string-to-width
-                        (string-trim line) dogears-line-width))
+                 (line (string-trim line))
                  (mode (face-propertize (string-remove-suffix "-mode" (symbol-name mode))
                                         'font-lock-type-face))
                  (position (if position
@@ -266,8 +269,7 @@ returns nil."
                  (relevance (face-propertize (dogears--relevance record)
                                              'font-lock-keyword-face))
                  (within (if within
-                             (truncate-string-to-width
-                              (face-propertize within 'font-lock-function-name-face) 25)
+                             (face-propertize within 'font-lock-function-name-face)
                            ""))
                  (dir))
       (if filename
@@ -278,7 +280,7 @@ returns nil."
                              concat "\\")
                 dir (face-propertize dir 'font-lock-comment-face))
         (setf dir ""))
-      (list manual relevance within line mode buffer position dir))))
+      (list manual relevance within line buffer mode position dir))))
 
 (defun dogears--relevance (record)
   "Return the relevance string for RECORD."
@@ -383,12 +385,13 @@ Compares against modes in `dogears-ignore-modes'."
                                (list (propertize "✓" 'help-echo "Manually remembered") 1 t)
                                '("Relevance" 10 t :right-align t)
                                '("Within" 25 t)
-                               '("Line" 25 t)
+                               '("Line" 20 t)
+                               '("Buffer" 20 t)
                                '("Mode" 12 t :right-align t)
-                               '("Buffer" 15 t :right-align t)
                                '("Pos" 5)
                                '("Directory" 25 t))
-        tabulated-list-sort-key '("#" . nil))
+        tabulated-list-sort-key '("#" . nil)
+        truncate-string-ellipsis dogears-ellipsis)
   (add-hook 'tabulated-list-revert-hook
             (lambda ()
               (setf tabulated-list-entries
