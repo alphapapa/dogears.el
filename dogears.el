@@ -101,6 +101,13 @@ activated."
   "How many characters from a place's line to show."
   :type 'integer)
 
+(defcustom dogears-sidebar-alist
+  '((side . right)
+    (window-parameters
+     (no-delete-other-windows . t)))
+  "Alist passed to `display-buffer-in-side-window', which see."
+  :type 'sexp)
+
 (defcustom dogears-within-function #'dogears--which-function
   "Function that returns what a place is \"within\"."
   :type '(choice (function-item dogears--which-function)
@@ -375,10 +382,7 @@ Compares against modes in `dogears-ignore-modes'."
                   (dogears-list)
                   (window-buffer)))
         (display-buffer-mark-dedicated t))
-    (display-buffer-in-side-window
-     buffer '((side . right)
-              (window-parameters
-               (no-delete-other-windows . t))))))
+    (display-buffer-in-side-window buffer dogears-sidebar-alist)))
 
 (define-derived-mode dogears-list-mode tabulated-list-mode
   "Dogears-List"
