@@ -332,6 +332,8 @@ Compares against modes in `dogears-ignore-modes'."
 
 (require 'tabulated-list)
 
+(defvar truncate-string-ellipsis)
+
 (defvar dogears-list-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
