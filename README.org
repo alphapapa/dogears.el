@@ -10,11 +10,9 @@
 
 /Never lose your place in Emacs again!/
 
-This library automatically and smartly remembers where you've been, in and across buffers, and helps you quickly return to any of those places.  It uses the Emacs bookmarks system internally (but without modifying the ~bookmarks-alist~) to save and restore places with mode-specific functionality.  
+This library automatically and smartly remembers where you've been, in and across buffers, and helps you quickly return to any of those places.  It works similarly to a Web browser's history list and back/forward commands, but with more contextual information and customization.  
 
-As usual, it's configurable to suit each user, with regard to how often places are remembered, which ones, and for how long.
-
-It uses standard Emacs completion, so it works with Helm, Ivy, Selectrum, Vertico, etc.  For Helm users, a ~helm-dogears-source~ is also provided in =helm-dogears.el= that can be used with any Helm command.
+It's configurable to suit each user, with regard to how often places are remembered, which ones, and for how long.  It uses standard Emacs completion, so it works with Helm, Ivy, Selectrum, Vertico, etc.  For Helm users, a ~helm-dogears-source~ is also provided in =helm-dogears.el= that can be used with any Helm command.
 
 * Screenshots
 
@@ -29,6 +27,7 @@ This screenshot shows it while using the theme =doom-solarized-dark=, and the =L
 * Contents                                                         :noexport:
 :PROPERTIES:
 :TOC:      :include siblings
+:ID:       8cdd22ed-5ab9-4ec6-962a-c05945a43ecf
 :END:
 :CONTENTS:
 - [[#installation][Installation]]
@@ -39,6 +38,7 @@ This screenshot shows it while using the theme =doom-solarized-dark=, and the =L
 * Installation
 :PROPERTIES:
 :TOC:      :depth 0
+:ID:       c3d59323-561a-4839-9e54-e2a8dfa72213
 :END:
 
 ** MELPA
@@ -57,7 +57,15 @@ The recommended way to install is with [[https://github.com/quelpa/quelpa-use-pa
   (require 'quelpa-use-package)
 
   (use-package dogears
-    :quelpa (dogears :fetcher github :repo "alphapapa/dogears.el"))
+    :quelpa (dogears :fetcher github :repo "alphapapa/dogears.el")
+
+    ;; These bindings are optional, of course:
+    :bind (:map global-map
+                ("M-g d" . dogears-go)
+                ("M-g M-b" . dogears-back)
+                ("M-g M-f" . dogears-forward)
+                ("M-g M-d" . dogears-list)
+                ("M-g M-D" . dogears-sidebar)))
 #+END_SRC
 
 ** Manual
@@ -69,6 +77,14 @@ If you want to install it manually, it's simple enough, but you should know what
 :TOC:      :depth 0
 :ID:       986e8593-3ed1-4716-8423-788e8a178aa3
 :END:
+
+It works by automatically remembering ("dogearing") the place at point when any of three things happens:
+
++  The ~dogears~ idle timer runs (after 5 seconds idle, by default).
++  One of the ~dogears-hooks~ is run (only including ~imenu-after-jump-hook~ by default).
++  One of the functions listed in ~dogears-functions~ is called (none, by default).
+
+Then the user can run a command to view or go to places in the list.
 
 | Command          | Action                                                     |
 |------------------+------------------------------------------------------------|
