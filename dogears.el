@@ -73,19 +73,19 @@ These are advised when `dogears-mode' is activated."
 (defcustom dogears-hooks
   '(imenu-after-jump-hook)
   "Hooks which should dogear a place when run.
-Dogears adds itself to these hooks when `dogears-mode' is
-activated."
+Dogears adds `dogears-remember' to these hooks when
+`dogears-mode' is activated."
   :type '(repeat variable))
 
 (defcustom dogears-ignore-places-functions
   (list #'minibufferp
         #'dogears--ignored-mode-p)
-  "Don't remember any places for which any of these functions return non-nil."
+  "Don't remember places in buffers for which any of these functions return non-nil."
   :type '(repeat function))
 
 (defcustom dogears-ignore-modes
   '(fundamental-mode dogears-list-mode exwm-mode helm-major-mode)
-  "Don't remember any places in buffers in these modes."
+  "Don't remember places in buffers in these modes."
   :type '(repeat symbol))
 
 (defcustom dogears-idle 5
@@ -105,8 +105,10 @@ activated."
   ;; We use buffer positions rather than lines to avoid calculating
   ;; `line-number-at-pos' every time a place record is made.
   "Maximum difference between places' positions for them to be considered equal.
-If two places are within this many characters, they are
-considered the same.  (See function `dogears--equal'.)"
+If, all else being equal, two places are within this many
+characters of each other, they are considered the same and are
+deduplicated from `dogears-list'.  (See function
+`dogears--equal'.)"
   :type 'integer)
 
 (defcustom dogears-sidebar-alist
@@ -123,7 +125,9 @@ considered the same.  (See function `dogears--equal'.)"
                  (function :tag "Custom function")))
 
 (defcustom dogears-update-list-buffer t
-  "Automatically update the `dogears-list' buffer."
+  "Automatically update the `dogears-list' buffer.
+The buffer is updated when commands like `dogears-remember',
+`dogears-go', and `dogears-back' are called."
   :type 'boolean)
 
 ;;;; Commands
@@ -131,8 +135,8 @@ considered the same.  (See function `dogears--equal'.)"
 ;;;###autoload
 (define-minor-mode dogears-mode
   "Never lose your place again.
-Dogears mode keeps track of where you've been and helps you
-easily find your way back."
+Like dogeared pages in a book, Dogears mode keeps track of where
+you've been and helps you retrace your steps."
   :global t
   (if dogears-mode
       (progn
@@ -154,7 +158,7 @@ easily find your way back."
 
 ;;;###autoload
 (defun dogears-remember (&rest _ignore)
-  "Remember the current place."
+  "Remember (\"dogear\") the current place."
   (interactive)
   (unless (seq-some #'funcall dogears-ignore-places-functions)
     (if-let ((record (or (ignore-errors
@@ -381,9 +385,6 @@ Compares against modes in `dogears-ignore-modes'."
     (define-key map (kbd "k") #'dogears-list-delete)
     map))
 
-(defvar dogears-list-called-from nil
-  "Buffer that `dogears-list' was called from.")
-
 (defun dogears-list-go ()
   "Go to place at point."
   (interactive)
@@ -400,16 +401,14 @@ Compares against modes in `dogears-ignore-modes'."
 (defun dogears-list ()
   "Show dogears list."
   (interactive)
-  (let ((called-from (current-buffer)))
-    (with-current-buffer (get-buffer-create "*Dogears List*")
-      (setf dogears-list-called-from called-from
-            dogears-list-buffer (current-buffer))
-      (dogears-list-mode)
-      (pop-to-buffer (current-buffer)))))
+  (with-current-buffer (get-buffer-create "*Dogears List*")
+    (setf dogears-list-buffer (current-buffer))
+    (dogears-list-mode)
+    (pop-to-buffer (current-buffer))))
 
 ;;;###autoload
 (defun dogears-sidebar ()
-  "Show Dogears list in a side window."
+  "Show the Dogears list in a side window."
   (interactive)
   (let* ((buffer (save-window-excursion
                    (dogears-list)
