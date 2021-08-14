@@ -242,44 +242,43 @@ returns nil."
 
 (defun dogears--format-record-list (record)
   "Return a list of elements in RECORD formatted."
-  (pcase-let* ((`(,name . ,(map filename position line within mode manual)) record)
-               (buffer (copy-sequence
-                        (if filename
-                            (file-name-nondirectory filename)
-                          name)))
-               (line (truncate-string-to-width
-                      (string-trim (copy-sequence line)) dogears-line-width))
-               (relevance (dogears--relevance record))
-               (dir))
-    ;; NOTE: To avoid weird "invalid face" errors that may result from adding text
-    ;; properties to strings every time this function is called, we copy all strings.
-    (if position
-        (setf position (number-to-string position))
-      (setf position ""))
-    (if filename
-        (setf dir (split-string (file-name-directory filename) "/" t)
-              dir (nreverse dir)
-              dir (cl-loop for d in dir
-                           concat (truncate-string-to-width d 10)
-                           concat "\\")
-              dir (propertize dir 'face 'font-lock-comment-face))
-      (setf dir ""))
-    (if within
-        (progn
-          ;; Does `truncate-string-to-width' return a copy of the string if it's already
-          ;; that short?  Who knows.  So we have to be sure, because we're modifying the
-          ;; properties of it, and we don't want to do that to the original.
-          (setf within (copy-sequence within)
-                within (truncate-string-to-width within 25))
-          (add-face-text-property 0 (length within) '(:inherit (font-lock-function-name-face)) 'append within))
-      (setf within ""))
-    ;; Add more faces.
-    (setf buffer (propertize buffer 'face 'font-lock-constant-face)
-          relevance (propertize relevance 'face 'font-lock-keyword-face)
-          mode (propertize (string-remove-suffix "-mode" (symbol-name mode)) 'face 'font-lock-type-face))
-    (add-face-text-property 0 (length line) '(:inherit (font-lock-string-face))
-                            'append line)
-    (list manual relevance within line mode buffer position dir)))
+  (cl-labels ((face-propertize (string face)
+                               ;; Return copy of STRING with FACE appended, but only if it doesn't already
+                               ;; contain FACE.  (I don't know a better way to prevent faces being added
+                               ;; repeatedly, which eventually, drastically slows down redisplay).
+                               (setf string (copy-sequence string))
+                               (let ((property (get-text-property 0 'face string)))
+                                 (unless (or (equal face property) (and (listp property) (member face property)))
+                                   (add-face-text-property 0 (length string) face 'append string)))
+                               string))
+    (pcase-let* ((`(,name . ,(map filename line manual mode position within)) record)
+                 (buffer (face-propertize (if filename
+                                              (file-name-nondirectory filename)
+                                            name)
+                                          'font-lock-constant-face))
+                 (line (truncate-string-to-width
+                        (string-trim line) dogears-line-width))
+                 (mode (face-propertize (string-remove-suffix "-mode" (symbol-name mode))
+                                        'font-lock-type-face))
+                 (position (if position
+                               (number-to-string position)
+                             ""))
+                 (relevance (face-propertize (dogears--relevance record)
+                                             'font-lock-keyword-face))
+                 (within (if within
+                             (truncate-string-to-width
+                              (face-propertize within 'font-lock-function-name-face) 25)
+                           ""))
+                 (dir))
+      (if filename
+          (setf dir (split-string (file-name-directory filename) "/" t)
+                dir (nreverse dir)
+                dir (cl-loop for d in dir
+                             concat (truncate-string-to-width d 10)
+                             concat "\\")
+                dir (face-propertize dir 'font-lock-comment-face))
+        (setf dir ""))
+      (list manual relevance within line mode buffer position dir))))
 
 (defun dogears--relevance (record)
   "Return the relevance string for RECORD."
