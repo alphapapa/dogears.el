@@ -74,8 +74,11 @@ If you want to install it manually, it's simple enough, but you should know what
 |------------------+------------------------------------------------------------|
 | =dogears-mode=     | Automatically remember places, according to configuration. |
 | =dogears-remember= | Manually remember the place at point.                      |
-| =dogears-go=       | Go to a place, selected with completion.                   |
-| =dogears-list=     | Show places in a tabulated list.                           |
+| =dogears-go=       | Go to a dogeared place, selected with completion.          |
+| =dogears-back=     | Go to previous dogeared place.                             |
+| =dogears-forward=  | Go to next dogeared place.                                 |
+| =dogears-list=     | Show dogeared places in a tabulated list buffer.           |
+| =dogears-sidebar=  | Show Dogears list in a side window.                        |
 
 ** Tips
 

@@ -357,6 +357,19 @@ Compares against modes in `dogears-ignore-modes'."
       (dogears-list-mode)
       (pop-to-buffer (current-buffer)))))
 
+;;;###autoload
+(defun dogears-sidebar ()
+  "Show Dogears list in a side window."
+  (interactive)
+  (let ((buffer (save-window-excursion
+                  (dogears-list)
+                  (window-buffer)))
+        (display-buffer-mark-dedicated t))
+    (display-buffer-in-side-window
+     buffer '((side . right)
+              (window-parameters
+               (no-delete-other-windows . t))))))
+
 (define-derived-mode dogears-list-mode tabulated-list-mode
   "Dogears-List"
   :group 'dogears
