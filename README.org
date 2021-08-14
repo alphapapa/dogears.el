@@ -10,7 +10,7 @@
 
 /Never lose your place in Emacs again!/
 
-This library automatically and smartly remembers where you've been, in and across buffers, and helps you quickly return to any of those places.  It works similarly to a Web browser's history list and back/forward commands, but with more contextual information and customization.  
+This library automatically and smartly remembers where you've been, in and across buffers, and helps you quickly return to any of those places.  It works similarly to a Web browser's history list and back/forward commands, but with more contextual information and customization.  As well, for most modes, it can return to a place even if its buffer no longer exists.
 
 It's configurable to suit each user, with regard to how often places are remembered, which ones, and for how long.  It uses standard Emacs completion, so it works with Helm, Ivy, Selectrum, Vertico, etc.  For Helm users, a ~helm-dogears-source~ is also provided in =helm-dogears.el= that can be used with any Helm command.
 
