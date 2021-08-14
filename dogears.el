@@ -285,15 +285,16 @@ may differ by up to `dogears-position-delta'."
 
 (defun dogears--format-record-list (record)
   "Return a list of elements in RECORD formatted."
-  (cl-labels ((face-propertize (string face)
-                               ;; Return copy of STRING with FACE appended, but only if it doesn't already
-                               ;; contain FACE.  (I don't know a better way to prevent faces being added
-                               ;; repeatedly, which eventually, drastically slows down redisplay).
-                               (setf string (copy-sequence string))
-                               (let ((property (get-text-property 0 'face string)))
-                                 (unless (or (equal face property) (and (listp property) (member face property)))
-                                   (add-face-text-property 0 (length string) face 'append string)))
-                               string))
+  (cl-labels ((face-propertize
+               (string face)
+               ;; Return copy of STRING with FACE appended, but only if it doesn't already
+               ;; contain FACE.  (I don't know a better way to prevent faces being added
+               ;; repeatedly, which eventually, drastically slows down redisplay).
+               (setf string (copy-sequence string))
+               (let ((property (get-text-property 0 'face string)))
+                 (unless (or (equal face property) (and (listp property) (member face property)))
+                   (add-face-text-property 0 (length string) face 'append string)))
+               string))
     (pcase-let* ((`(,name . ,(map filename line manual mode position within)) record)
                  (buffer (face-propertize (if filename
                                               (file-name-nondirectory filename)
