@@ -31,7 +31,10 @@
 
 (require 'dogears)
 
-(require 'helm)
+;; Don't complain if Helm isn't found (but we must be careful to not
+;; use any macros defined in Helm).  We also set byte-compile-warnings
+;; locally.
+(require 'helm nil t)
 
 ;;;; Variables
 
@@ -58,3 +61,7 @@
 (provide 'helm-dogears)
 
 ;;; helm-dogears.el ends here
+
+;; Local Variables:
+;; byte-compile-warnings: (not unresolved)
+;; End:
