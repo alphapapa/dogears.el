@@ -103,6 +103,10 @@ activated."
                  (function-item dogears--within)
                  (function :tag "Custom function")))
 
+(defcustom dogears-update-list-buffer t
+  "Automatically update the `dogears-list' buffer."
+  :type 'boolean)
+
 ;;;; Commands
 
 ;;;###autoload
@@ -160,7 +164,7 @@ easily find your way back."
           (cl-pushnew record dogears-list :test #'equal)
           (setf dogears-list (delete-dups dogears-list)
                 dogears-list (seq-take dogears-list dogears-limit))
-          (when (buffer-live-p dogears-list-buffer)
+          (when (and dogears-update-list-buffer (buffer-live-p dogears-list-buffer))
             (with-current-buffer dogears-list-buffer
               (revert-buffer))))
       (when (called-interactively-p 'interactive)
@@ -184,7 +188,7 @@ bookmark record."
         (if (buffer-live-p buffer)
             (switch-to-buffer buffer)
           (user-error "Buffer no longer exists: %s" buffer))))
-  (when (buffer-live-p dogears-list-buffer)
+  (when (and dogears-update-list-buffer (buffer-live-p dogears-list-buffer))
     (with-current-buffer dogears-list-buffer
       (revert-buffer))))
 
