@@ -440,8 +440,7 @@ Compares against modes in `dogears-ignore-modes'."
   (add-hook 'tabulated-list-revert-hook
             (lambda ()
               (setf tabulated-list-entries
-                    (with-current-buffer (or dogears-list-called-from
-                                             (current-buffer))
+                    (with-current-buffer (window-buffer (get-mru-window t nil nil))
                       (dogears-list--entries))))
             nil 'local)
   (tabulated-list-init-header)
