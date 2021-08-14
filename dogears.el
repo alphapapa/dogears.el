@@ -42,8 +42,18 @@
 (defvar dogears-list nil
   "List of dogeared places.")
 
+(defvar dogears-index 0
+  "Index of last-visited dogeared place.
+Used in `dogears-back' and `dogears-forward'.")
+
+(defvar dogears-last-place nil
+  "Last-visited dogeared place.")
+
 (defvar dogears-idle-timer nil
   "Idle timer which dogears the current place.")
+
+(defvar dogears-list-buffer nil
+  "The \"*Dogears List*\" buffer.")
 
 ;;;; Customization
 
@@ -144,9 +154,15 @@ easily find your way back."
           (setf (map-elt (cdr record) 'mode) major-mode
                 (map-elt (cdr record) 'line) (buffer-substring
                                               (point-at-bol) (point-at-eol)))
-          (push record dogears-list)
+          ;; It's hard to say whether push or pushnew is the best choice.  When returning
+          ;; to a dogeared place, that place gets moved to the front of the list, or it
+          ;; remains where it was.  Either way, unless we allow dupes, the list changes.
+          (cl-pushnew record dogears-list :test #'equal)
           (setf dogears-list (delete-dups dogears-list)
-                dogears-list (seq-take dogears-list dogears-limit)))
+                dogears-list (seq-take dogears-list dogears-limit))
+          (when (buffer-live-p dogears-list-buffer)
+            (with-current-buffer dogears-list-buffer
+              (revert-buffer))))
       (when (called-interactively-p 'interactive)
         (message "Dogears: Couldn't dogear this place")))))
 
@@ -167,7 +183,26 @@ bookmark record."
           (setf buffer (get-buffer buffer)))
         (if (buffer-live-p buffer)
             (switch-to-buffer buffer)
-          (user-error "Buffer no longer exists: %s" buffer)))))
+          (user-error "Buffer no longer exists: %s" buffer))))
+  (when (buffer-live-p dogears-list-buffer)
+    (with-current-buffer dogears-list-buffer
+      (revert-buffer))))
+
+(defun dogears-back ()
+  "Go to previous dogeared place."
+  (interactive)
+  (if-let ((place (nth (cl-incf dogears-index) dogears-list)))
+      (dogears-go place)
+    (cl-decf dogears-index)
+    (user-error "Already at oldest dogeared place")))
+
+(defun dogears-forward ()
+  "Go to next dogeared place."
+  (interactive)
+  (if-let ((place (nth (cl-decf dogears-index) dogears-list)))
+      (dogears-go place)
+    (cl-incf dogears-index)
+    (user-error "Already at latest dogeared place")))
 
 ;;;; Functions
 
@@ -317,7 +352,8 @@ Compares against modes in `dogears-ignore-modes'."
   (interactive)
   (let ((called-from (current-buffer)))
     (with-current-buffer (get-buffer-create "*Dogears List*")
-      (setf dogears-list-called-from called-from)
+      (setf dogears-list-called-from called-from
+            dogears-list-buffer (current-buffer))
       (dogears-list-mode)
       (pop-to-buffer (current-buffer)))))
 
