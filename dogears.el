@@ -265,6 +265,8 @@ may differ by up to `dogears-position-delta'."
          (equal a-within b-within)
          (equal a-filename b-filename)
          (equal a-name b-name)
+         ;; FIXME: Some bookmarks don't have a position, and that prevents
+         ;; them from ever being equal, even if they should be.
          (and a-position b-position)
          (<= (abs (- a-position b-position)) dogears-position-delta))))
 
