@@ -3,6 +3,9 @@
 ;; Copyright (C) 2021  Adam Porter
 
 ;; Author: Adam Porter <adam@alphapapa.net>
+;; URL: https://github.com/alphapapa/dogears.el
+;; Version: 0.1-pre
+;; Package-Requires: ((emacs "26.3") (map "2.1"))
 ;; Keywords: convenience
 
 ;; This program is free software; you can redistribute it and/or modify
