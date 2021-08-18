@@ -167,11 +167,15 @@ you've been and helps you retrace your steps."
         (progn
           (setf (map-elt (cdr record) 'manual)
                 (if (called-interactively-p 'interactive) "✓" " "))
-          (unless (stringp (car record))
-            ;; Like `bookmark-make-record', we may have to add a string
-            ;; ourselves.  And we want every record to have one as its
-            ;; first element, for consistency.
-            (push "" record))
+          (pcase (car record)
+            ;; Like `bookmark-make-record', we may have to add a string ourselves.
+            ;; And we want every record to have one as its first element, for
+            ;; consistency.  And sometimes, records have a nil name rather than an
+            ;; empty string, depending on the bookmark-make-record-function (I'm
+            ;; not sure if there are defined standards for what the first element
+            ;; of a bookmark record should be).
+            (`nil (setf (car record) ""))
+            (_ (push "" record)))
           (unless (map-elt (cdr record) 'buffer)
             (setf (map-elt (cdr record) 'buffer) (buffer-name)))
           (when-let ((within (or (funcall dogears-within-function)
