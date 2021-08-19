@@ -168,8 +168,6 @@ you've been and helps you retrace your steps."
                            (funcall bookmark-make-record-function))
                          (dogears--buffer-record))))
         (progn
-          (setf (map-elt (cdr record) 'manual)
-                (if (called-interactively-p 'interactive) "✓" " "))
           (pcase (car record)
             ;; Like `bookmark-make-record', we may have to add a string ourselves.
             ;; And we want every record to have one as its first element, for
@@ -179,6 +177,8 @@ you've been and helps you retrace your steps."
             ;; of a bookmark record should be).
             (`nil (setf (car record) ""))
             (_ (push "" record)))
+          (setf (map-elt (cdr record) 'manual)
+                (if (called-interactively-p 'interactive) "✓" " "))
           (unless (map-elt (cdr record) 'buffer)
             (setf (map-elt (cdr record) 'buffer) (buffer-name)))
           (when-let ((within (or (funcall dogears-within-function)
