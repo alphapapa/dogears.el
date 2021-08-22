@@ -3,6 +3,9 @@
 ;; Copyright (C) 2021  Adam Porter
 
 ;; Author: Adam Porter <adam@alphapapa.net>
+;; URL: https://github.com/alphapapa/dogears.el
+;; Version: 0.1-pre
+;; Package-Requires: ((emacs "26.3") (dogears "0.1-pre") (helm "3.6"))
 ;; Keywords: convenience
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -29,15 +32,17 @@
 
 ;;;; Requirements
 
-(require 'dogears)
+(require 'helm)
 
-;; Don't complain if Helm isn't found (but we must be careful to not
-;; use any macros defined in Helm).  We also set byte-compile-warnings
-;; locally.
-(require 'helm nil t)
+(require 'dogears)
 
 ;;;; Variables
 
+;; We autoload this so people can use it in other Helm commands
+;; without having to remember to load this library first.  (An easy
+;; oversight to make--I have many times.)
+
+;;;###autoload
 (defvar helm-dogears-source
   (helm-make-source "Dogears" 'helm-source-sync
     :candidates (lambda ()
@@ -52,6 +57,12 @@
 
 ;;;; Commands
 
+;;;###autoload
+(defun helm-dogears ()
+  "Show `helm-dogears-source' with Helm."
+  (interactive)
+  (helm :sources 'helm-dogears-source))
+
 
 ;;;; Functions
 
@@ -61,7 +72,3 @@
 (provide 'helm-dogears)
 
 ;;; helm-dogears.el ends here
-
-;; Local Variables:
-;; byte-compile-warnings: (not unresolved)
-;; End:
