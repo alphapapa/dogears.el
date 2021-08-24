@@ -46,9 +46,7 @@ This screenshot shows it while using the theme =doom-solarized-dark=, and the =L
 
 ** MELPA
 
-This library isn't yet on MELPA.
-
-# If you installed from MELPA, you're done.  Just run one of the commands below.
+If you installed from MELPA, you're done.  Just run one of the commands below.
 
 ** Quelpa
 
