@@ -175,6 +175,9 @@ you've been and helps you retrace your steps."
             ;; empty string, depending on the bookmark-make-record-function (I'm
             ;; not sure if there are defined standards for what the first element
             ;; of a bookmark record should be).
+            ((pred stringp)
+             ;; Record already has a string as its first element: do nothing.
+             nil)
             (`nil (setf (car record) ""))
             (_ (push "" record)))
           (setf (map-elt (cdr record) 'manual)
