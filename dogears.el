@@ -58,6 +58,10 @@ Used in `dogears-back' and `dogears-forward'.")
 (defvar dogears-list-buffer nil
   "The \"*Dogears List*\" buffer.")
 
+(defvar dogears-functions-advice nil
+  "Alist mapping advised functions to advice functions.
+Used to remove advice when `dogears-mode' is disabled.")
+
 ;;;; Customization
 
 (defgroup dogears nil
@@ -144,7 +148,18 @@ you've been and helps you retrace your steps."
   (if dogears-mode
       (progn
         (dolist (fn dogears-functions)
-          (advice-add fn :after #'dogears-remember))
+          ;; The interactive form of an advice function overrides the
+          ;; form of an advised function, so we must use a lambda with
+          ;; the advised function's interactive form.
+          (let* ((advice-fn-symbol (intern (format "dogears--remember-after-%s" fn)))
+                 (advice-fn `(lambda (&rest _ignore)
+                               ,(format "Call `dogears-remember'.  Used as :after advice for `%s'."
+                                        fn)
+                               ,(interactive-form fn)
+                               (dogears-remember))))
+            (fset advice-fn-symbol advice-fn)
+            (advice-add fn :after advice-fn-symbol )
+            (map-put dogears-functions-advice fn advice-fn-symbol)))
         (dolist (hook dogears-hooks)
           (add-hook hook #'dogears-remember))
         (when dogears-idle
@@ -152,7 +167,9 @@ you've been and helps you retrace your steps."
                 (run-with-idle-timer dogears-idle 'repeat #'dogears-remember))))
     ;; Disable mode.
     (dolist (fn dogears-functions)
-      (advice-remove fn #'dogears-remember))
+      (advice-remove fn (map-elt dogears-functions-advice fn))
+      (unintern (map-elt dogears-functions-advice fn) nil)
+      (setf dogears-functions-advice (map-delete dogears-functions-advice fn)))
     (dolist (hook dogears-hooks)
       (remove-hook hook #'dogears-remember))
     (when dogears-idle-timer
