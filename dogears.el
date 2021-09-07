@@ -159,7 +159,7 @@ you've been and helps you retrace your steps."
                                (dogears-remember))))
             (fset advice-fn-symbol advice-fn)
             (advice-add fn :after advice-fn-symbol )
-            (map-put dogears-functions-advice fn advice-fn-symbol)))
+            (setf (map-elt dogears-functions-advice fn) advice-fn-symbol)))
         (dolist (hook dogears-hooks)
           (add-hook hook #'dogears-remember))
         (when dogears-idle
