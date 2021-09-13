@@ -152,11 +152,12 @@ you've been and helps you retrace your steps."
           ;; form of an advised function, so we must use a lambda with
           ;; the advised function's interactive form.
           (let* ((advice-fn-symbol (intern (format "dogears--remember-after-%s" fn)))
-                 (advice-fn `(lambda (&rest _ignore)
-                               ,(format "Call `dogears-remember'.  Used as :after advice for `%s'."
-                                        fn)
-                               ,(interactive-form fn)
-                               (dogears-remember))))
+                 (advice-fn
+		  `(lambda (&rest _ignore)
+                     ,(format "Call `dogears-remember'.  Used as :after advice for `%s'."
+                              fn)
+                     ,(interactive-form fn)
+                     (dogears-remember))))
             (fset advice-fn-symbol advice-fn)
             (advice-add fn :after advice-fn-symbol )
             (setf (map-elt dogears-functions-advice fn) advice-fn-symbol)))
@@ -180,7 +181,7 @@ you've been and helps you retrace your steps."
 (defun dogears-remember (&rest _ignore)
   "Remember (\"dogear\") the current place."
   (interactive)
-  (unless (seq-some #'funcall dogears-ignore-places-functions)
+  (unless (cl-some #'funcall dogears-ignore-places-functions)
     (if-let ((record (or (ignore-errors
                            (funcall bookmark-make-record-function))
                          (dogears--buffer-record))))
@@ -325,7 +326,8 @@ may differ by up to `dogears-position-delta'."
                ;; repeatedly, which eventually, drastically slows down redisplay).
                (setf string (copy-sequence string))
                (let ((property (get-text-property 0 'face string)))
-                 (unless (or (equal face property) (and (listp property) (member face property)))
+                 (unless (or (equal face property)
+			     (and (listp property) (member face property)))
                    (add-face-text-property 0 (length string) face 'append string)))
                string))
     (pcase-let* ((`(,name . ,(map filename line manual mode position within)) record)
