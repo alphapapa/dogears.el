@@ -58,7 +58,8 @@ The recommended way to install is with [[https://github.com/quelpa/quelpa-use-pa
   (require 'quelpa-use-package)
 
   (use-package dogears
-    :quelpa (dogears :fetcher github :repo "alphapapa/dogears.el")
+    :quelpa (dogears :fetcher github :repo "alphapapa/dogears.el"
+                     :files (:defaults (:exclude "helm-dogears.el")))
 
     ;; These bindings are optional, of course:
     :bind (:map global-map
