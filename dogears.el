@@ -426,7 +426,9 @@ Compares against modes in `dogears-ignore-modes'."
   (interactive)
   (let ((place (tabulated-list-get-id)))
     (setf dogears-list (cl-delete place dogears-list)))
-  (tabulated-list-revert))
+  (let ((this (point)))
+    (tabulated-list-revert)
+    (goto-char this)))
 
 ;;;###autoload
 (defun dogears-list ()
