@@ -137,6 +137,10 @@ The buffer is updated when commands like `dogears-remember',
 `dogears-go', and `dogears-back' are called."
   :type 'boolean)
 
+(defcustom dogears-message t
+  "Echo a message when moving back/forward."
+  :type 'boolean)
+
 ;;;; Commands
 
 ;;;###autoload
@@ -247,7 +251,10 @@ bookmark record."
   "Go to previous dogeared place."
   (interactive)
   (if-let ((place (nth (cl-incf dogears-index) dogears-list)))
-      (dogears-go place)
+      (progn
+        (dogears-go place)
+        (when dogears-message
+          (message "Dogears: Back to %s/%s" dogears-index (length dogears-list))))
     (cl-decf dogears-index)
     (user-error "Already at oldest dogeared place")))
 
@@ -255,7 +262,10 @@ bookmark record."
   "Go to next dogeared place."
   (interactive)
   (if-let ((place (nth (cl-decf dogears-index) dogears-list)))
-      (dogears-go place)
+      (progn
+        (dogears-go place)
+        (when dogears-message
+          (message "Dogears: Forward to %s/%s" dogears-index (length dogears-list))))
     (cl-incf dogears-index)
     (user-error "Already at latest dogeared place")))
 
