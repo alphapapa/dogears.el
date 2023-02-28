@@ -250,7 +250,7 @@ bookmark record."
 (defun dogears-back ()
   "Go to previous dogeared place."
   (interactive)
-  (if-let ((place (nth (cl-incf dogears-index) dogears-list)))
+  (if-let ((place (dogears--nth (cl-incf dogears-index) dogears-list)))
       (progn
         (dogears-go place)
         (when dogears-message
@@ -261,7 +261,7 @@ bookmark record."
 (defun dogears-forward ()
   "Go to next dogeared place."
   (interactive)
-  (if-let ((place (nth (cl-decf dogears-index) dogears-list)))
+  (if-let ((place (dogears--nth (cl-decf dogears-index) dogears-list)))
       (progn
         (dogears-go place)
         (when dogears-message
@@ -412,6 +412,10 @@ Compares against modes in `dogears-ignore-modes'."
   "Call `which-function' while preventing it from using `add-log-current-defun'."
   (cl-letf (((symbol-function 'add-log-current-defun) #'ignore))
     (which-function)))
+
+(defun dogears--nth (n list)
+  "Calling `nth' for negative `n' fetches the 0th element. This wraps the call by returning `nil' in such cases."
+  (if (< n 0) nil (nth n list)))
 
 ;;;; Tabulated list mode
 
