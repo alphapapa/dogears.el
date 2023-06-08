@@ -215,7 +215,7 @@ you've been and helps you retrace your steps."
   "Remember (\"dogear\") the current place."
   (interactive)
   (unless (cl-some #'funcall dogears-ignore-places-functions)
-    (if-let ((record (dogears--place)))
+    (if-let ((record (dogears--place (called-interactively-p 'interactive))))
         (progn
           ;; It's hard to say whether push or pushnew is the best choice.  When returning
           ;; to a dogeared place, that place gets moved to the front of the list, or it
