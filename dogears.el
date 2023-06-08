@@ -225,7 +225,9 @@ you've been and helps you retrace your steps."
                 dogears-list (seq-take dogears-list dogears-limit))
           (when (and dogears-update-list-buffer (buffer-live-p dogears-list-buffer))
             (with-current-buffer dogears-list-buffer
-              (revert-buffer))))
+              (revert-buffer)))
+          (when (called-interactively-p 'interactive)
+            (message "Dogeared")))
       (when (called-interactively-p 'interactive)
         (message "Dogears: Couldn't dogear this place")))))
 
