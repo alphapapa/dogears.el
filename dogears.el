@@ -223,9 +223,7 @@ you've been and helps you retrace your steps."
           (cl-pushnew record dogears-list :test #'dogears--equal)
           (setf dogears-list (delete-dups dogears-list)
                 dogears-list (seq-take dogears-list dogears-limit))
-          (when (and dogears-update-list-buffer (buffer-live-p dogears-list-buffer))
-            (with-current-buffer dogears-list-buffer
-              (revert-buffer)))
+          (dogears--update-list-buffer)
           (when (called-interactively-p 'interactive)
             (message "Dogeared")))
       (when (called-interactively-p 'interactive)
@@ -249,9 +247,7 @@ bookmark record."
         (if (buffer-live-p buffer)
             (switch-to-buffer buffer)
           (user-error "Buffer no longer exists: %s" buffer))))
-  (when (and dogears-update-list-buffer (buffer-live-p dogears-list-buffer))
-    (with-current-buffer dogears-list-buffer
-      (revert-buffer))))
+  (dogears--update-list-buffer))
 
 (defun dogears-back (&optional manualp)
   "Go to previous dogeared place.
@@ -299,6 +295,12 @@ consider manually dogeared places."
                     ('backward "oldest")
                     ('forward "newest"))
                   (if manualp "manually " "")))))
+
+(defun dogears--update-list-buffer ()
+  "Update list buffer if it is open and so-configured."
+  (when (and dogears-update-list-buffer (buffer-live-p dogears-list-buffer))
+    (with-current-buffer dogears-list-buffer
+      (revert-buffer))))
 
 (defun dogears--buffer-record ()
   "Return a bookmark-like record for the current buffer.
