@@ -288,12 +288,13 @@ returns nil."
         (cons 'mode major-mode)
         (cons 'position (point))))
 
-(defun dogears--equal (a b)
+(cl-defun dogears--equal (a b &key ignore-manual-p)
   "Return non-nil if places A and B are considered equal.
 A and B should be bookmark records as stored in `dogears-list'.
 They are considered equal if they have the same elements, with
 two exceptions: their `line's may differ, and their `position's
-may differ by up to `dogears-position-delta'."
+may differ by up to `dogears-position-delta'.  If
+IGNORE-MANUAL-P, ignore whether places were manually remembered."
   (pcase-let* ((`(,a-name . ,(map ('filename a-filename) ('line _a-line)
                                   ('manual a-manual) ('mode a-mode)
                                   ('position a-position) ('within a-within)))
@@ -305,7 +306,7 @@ may differ by up to `dogears-position-delta'."
     ;; Test elements in, roughly, the order of some balance of factors
     ;; involving what's quickest to compare and what's most likely to differ.
     (and (equal a-mode b-mode)
-         (equal a-manual b-manual)
+         (or ignore-manual-p (equal a-manual b-manual))
          (equal a-within b-within)
          (equal a-filename b-filename)
          (equal a-name b-name)
