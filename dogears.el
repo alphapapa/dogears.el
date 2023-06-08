@@ -278,7 +278,7 @@ consider manually dogeared places."
                             :start (pcase direction
                                      ('forward (1+ dogears-index)))
                             :end (pcase direction
-                                   ('backward dogears-index ))
+                                   ('backward dogears-index))
                             :from-end (equal 'backward direction))))
     (if (and place (not (dogears--equal place current-place :ignore-manual-p manualp)))
         (progn
