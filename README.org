@@ -110,6 +110,10 @@ Then the user can run a command to view or go to places in the list.
 :TOC:      :depth 0
 :END:
 
+** 0.2-pre
+
+Nothing new yet.
+
 ** 0.1
 
 First tagged release.
