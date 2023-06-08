@@ -112,7 +112,15 @@ Then the user can run a command to view or go to places in the list.
 
 ** 0.2-pre
 
-Nothing new yet.
+*Additions*
+
++ Commands ~dogears-forward~ and ~dogears-back~ accept a universal prefix argument to move to manually remembered places.
++ Highlight index of last-selected place in ~dogears-list~ buffer.
+
+
+*Fixes*
+
++ Various logic regarding moving between remembered places.
 
 ** 0.1
 
