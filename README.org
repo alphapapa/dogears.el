@@ -110,9 +110,9 @@ Then the user can run a command to view or go to places in the list.
 :TOC:      :depth 0
 :END:
 
-** 0.1-pre
+** 0.1
 
-Not yet tagged.
+First tagged release.
 
 # * Credits
 
