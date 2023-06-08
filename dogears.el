@@ -198,7 +198,7 @@ you've been and helps you retrace your steps."
        nil)
       (`nil (setf (car record) ""))
       (_ (push "" record)))
-    (setf (map-elt (cdr record) 'manual) manualp)
+    (setf (map-elt (cdr record) 'manualp) manualp)
     (unless (map-elt (cdr record) 'buffer)
       (setf (map-elt (cdr record) 'buffer) (buffer-name)))
     (when-let ((within (or (funcall dogears-within-function)
@@ -277,7 +277,7 @@ consider manually dogeared places."
          (predicate (lambda (place)
                       (and (not (dogears--equal place current-place))
                            (or (not manualp)
-                               (map-elt (cdr place) 'manual)))))
+                               (map-elt (cdr place) 'manualp)))))
          (place (cl-find-if predicate dogears-list
                             :start (pcase direction
                                      ('forward (1+ dogears-index)))
@@ -319,17 +319,17 @@ two exceptions: their `line's may differ, and their `position's
 may differ by up to `dogears-position-delta'.  If
 IGNORE-MANUAL-P, ignore whether places were manually remembered."
   (pcase-let* ((`(,a-name . ,(map ('filename a-filename) ('line _a-line)
-                                  ('manual a-manual) ('mode a-mode)
+                                  ('manualp a-manualp) ('mode a-mode)
                                   ('position a-position) ('within a-within)))
                 a)
                (`(,b-name . ,(map ('filename b-filename) ('line _b-line)
-                                  ('manual b-manual) ('mode b-mode)
+                                  ('manualp b-manualp) ('mode b-mode)
                                   ('position b-position) ('within b-within)))
                 b))
     ;; Test elements in, roughly, the order of some balance of factors
     ;; involving what's quickest to compare and what's most likely to differ.
     (and (equal a-mode b-mode)
-         (or ignore-manual-p (equal a-manual b-manual))
+         (or ignore-manual-p (equal a-manualp b-manualp))
          (equal a-within b-within)
          (equal a-filename b-filename)
          (equal a-name b-name)
@@ -352,10 +352,10 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
 
 (defun dogears--format-record (record)
   "Return bookmark RECORD formatted."
-  (pcase-let* ((`(,manual ,relevance ,within ,line ,mode ,buffer ,position ,dir)
+  (pcase-let* ((`(,manualp ,relevance ,within ,line ,mode ,buffer ,position ,dir)
                 (dogears--format-record-list record)))
     (format "%s [%9s]  (%25s)  \"%25s\"  %s %12s %s\\%s"
-            (if manual "✓" " ") relevance within line buffer mode position dir)))
+            (if manualp "✓" " ") relevance within line buffer mode position dir)))
 
 (defun dogears--format-record-list (record)
   "Return a list of elements in RECORD formatted."
@@ -370,8 +370,8 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
 			     (and (listp property) (member face property)))
                    (add-face-text-property 0 (length string) face 'append string)))
                string))
-    (pcase-let* ((`(,name . ,(map filename line manual mode position within)) record)
-                 (manual (if manual "✓" " "))
+    (pcase-let* ((`(,name . ,(map filename line manualp mode position within)) record)
+                 (manual (if manualp "✓" " "))
                  (buffer (face-propertize (if filename
                                               (file-name-nondirectory filename)
                                             name)
