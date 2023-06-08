@@ -87,7 +87,7 @@ Dogears adds `dogears-remember' to these hooks when
 (defcustom dogears-ignore-places-functions
   (list #'minibufferp
         #'dogears--ignored-mode-p)
-  "Don't remember places in buffers for which any of these functions return non-nil."
+  "Ignore places for which any of these functions return non-nil."
   :type '(repeat function))
 
 (defcustom dogears-ignore-modes
