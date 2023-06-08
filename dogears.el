@@ -253,29 +253,52 @@ bookmark record."
     (with-current-buffer dogears-list-buffer
       (revert-buffer))))
 
-(defun dogears-back ()
-  "Go to previous dogeared place."
-  (interactive)
-  (if-let ((place (nth (cl-incf dogears-index) dogears-list)))
-      (progn
-        (dogears-go place)
-        (when dogears-message
-          (message "Dogears: Back to %s/%s" dogears-index (length dogears-list))))
-    (cl-decf dogears-index)
-    (user-error "Already at oldest dogeared place")))
+(defun dogears-back (&optional manualp)
+  "Go to previous dogeared place.
+If MANUALP (interactively, with prefix), go to previous manually
+remembered place."
+  (interactive "P")
+  (dogears-move 'backward manualp))
 
-(defun dogears-forward ()
-  "Go to next dogeared place."
-  (interactive)
-  (if-let ((place (nth (cl-decf dogears-index) dogears-list)))
-      (progn
-        (dogears-go place)
-        (when dogears-message
-          (message "Dogears: Forward to %s/%s" dogears-index (length dogears-list))))
-    (cl-incf dogears-index)
-    (user-error "Already at latest dogeared place")))
+(defun dogears-forward (&optional manualp)
+  "Go to next dogeared place.
+If MANUALP (interactively, with prefix), go to next manually
+remembered place."
+  (interactive "P")
+  (dogears-move 'forward manualp))
 
 ;;;; Functions
+
+(defun dogears-move (direction &optional manualp)
+  "Move to next/previous dogeared place in DIRECTION.
+DIRECTION may be `forward' or `backward'.  If MANUALP, only
+consider manually dogeared places."
+  (let* ((current-place (dogears--place) )
+         (predicate (lambda (place)
+                      (and (not (dogears--equal place current-place))
+                           (or (not manualp)
+                               (map-elt (cdr place) 'manual)))))
+         (place (cl-find-if predicate dogears-list
+                            :start (pcase direction
+                                     ('forward (1+ dogears-index)))
+                            :end (pcase direction
+                                   ('backward dogears-index ))
+                            :from-end (equal 'backward direction))))
+    (if (and place (not (dogears--equal place current-place :ignore-manual-p manualp)))
+        (progn
+          (dogears-go place)
+          (setf dogears-index (cl-position place dogears-list :test #'dogears--equal))
+          (when dogears-message
+            (message "Dogears: %s to %s/%s"
+                     (pcase direction
+                       ('backward "Back")
+                       ('forward "Forward"))
+                     dogears-index (length dogears-list))))
+      (user-error "At %s %sdogeared place"
+                  (pcase direction
+                    ('backward "oldest")
+                    ('forward "newest"))
+                  (if manualp "manually " "")))))
 
 (defun dogears--buffer-record ()
   "Return a bookmark-like record for the current buffer.
