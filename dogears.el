@@ -280,16 +280,18 @@ consider manually dogeared places."
                             :end (pcase direction
                                    ('backward dogears-index))
                             :from-end (equal 'backward direction))))
-    (if (and place (not (dogears--equal place current-place :ignore-manual-p manualp)))
+    (if place
         (progn
-          (dogears-go place)
           (setf dogears-index (cl-position place dogears-list :test #'dogears--equal))
-          (when dogears-message
-            (message "Dogears: %s to %s/%s"
-                     (pcase direction
-                       ('backward "Back")
-                       ('forward "Forward"))
-                     dogears-index (length dogears-list))))
+          (when (not (dogears--equal place current-place :ignore-manual-p manualp))
+            (dogears-go place)
+            (when dogears-message
+              (message "Dogears: %s to %s/%s"
+                       (pcase direction
+                         ('backward "Back")
+                         ('forward "Forward"))
+                       (1+ dogears-index) (length dogears-list)))))
+      (dogears--update-list-buffer)
       (user-error "At %s %sdogeared place"
                   (pcase direction
                     ('backward "oldest")
