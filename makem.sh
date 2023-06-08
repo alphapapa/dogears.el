@@ -7,7 +7,7 @@
 
 # * Commentary:
 
-# makem.sh is a script helps to build, lint, and test Emacs Lisp
+# makem.sh is a script that helps to build, lint, and test Emacs Lisp
 # packages.  It aims to make linting and testing as simple as possible
 # without requiring per-package configuration.
 
@@ -198,24 +198,36 @@ function elisp-byte-compile-file {
     cat >"$file" <<EOF
 (defun makem-batch-byte-compile (&rest args)
   ""
-  (let ((num-errors 0))
+  (let ((num-errors 0)
+        (num-warnings 0))
     ;; NOTE: Only accepts files as args, not directories.
     (dolist (file command-line-args-left)
-      (unless (makem-byte-compile-file file)
-        (cl-incf num-errors)))
+      (pcase-let ((\`(,errors ,warnings) (makem-byte-compile-file file)))
+        (cl-incf num-errors errors)
+        (cl-incf num-warnings warnings)))
     (zerop num-errors)))
 
 (defun makem-byte-compile-file (filename &optional load)
-  "Call \`byte-compile-warn', returning nil if there are any warnings."
-  (let ((num-warnings 0))
+  "Call \`byte-compile-warn', returning the number of errors and the number of warnings."
+  (let ((num-warnings 0)
+        (num-errors 0))
     (cl-letf (((symbol-function 'byte-compile-warn)
                (lambda (format &rest args)
                  ;; Copied from \`byte-compile-warn'.
                  (cl-incf num-warnings)
                  (setq format (apply #'format-message format args))
-                 (byte-compile-log-warning format t :warning))))
+                 (byte-compile-log-warning format t :warning)))
+              ((symbol-function 'byte-compile-report-error)
+               (lambda (error-info &optional fill &rest args)
+                 (cl-incf num-errors)
+                 ;; Copied from \`byte-compile-report-error'.
+                 (setq byte-compiler-error-flag t)
+                 (byte-compile-log-warning
+                  (if (stringp error-info) error-info
+                    (error-message-string error-info))
+                  fill :error))))
       (byte-compile-file filename load))
-    (zerop num-warnings)))
+    (list num-errors num-warnings)))
 EOF
     echo "$file"
 }
@@ -255,20 +267,23 @@ Exits non-zero if mis-indented lines are found.  Checks files in
   (let ((errors-p))
     (cl-labels ((lint-file (file)
                            (find-file file)
-                           (let ((tick (buffer-modified-tick)))
-                             (let ((inhibit-message t))
-                               (indent-region (point-min) (point-max)))
-                             (when (/= tick (buffer-modified-tick))
-                               ;; Indentation changed: warn for each line.
-                               (dolist (line (undo-lines buffer-undo-list))
-                                 (message "%s:%s: Indentation mismatch" (buffer-name) line))
-                               (setf errors-p t))))
+                           (let ((inhibit-message t))
+                             (indent-region (point-min) (point-max)))
+                           (when buffer-undo-list
+                             ;; Indentation changed: warn for each line.
+                             (dolist (line (undo-lines buffer-undo-list))
+                               (message "%s:%s: Indentation mismatch" (buffer-name) line))
+                             (setf errors-p t)))
+                (undo-pos (entry)
+                           (cl-typecase (car entry)
+                             (number (car entry))
+                             (string (abs (cdr entry)))))
                 (undo-lines (undo-list)
                             ;; Return list of lines changed in UNDO-LIST.
                             (nreverse (cl-loop for elt in undo-list
-                                               when (and (consp elt)
-                                                         (numberp (car elt)))
-                                               collect (line-number-at-pos (car elt))))))
+                                               for pos = (undo-pos elt)
+                                               when pos
+                                               collect (line-number-at-pos pos)))))
       (mapc #'lint-file (mapcar #'expand-file-name command-line-args-left))
       (when errors-p
         (kill-emacs 1)))))
@@ -357,7 +372,7 @@ function byte-compile-file {
     run_emacs \
         --load "$(elisp-byte-compile-file)" \
         "${error_on_warn[@]}" \
-        --eval "(unless (makem-byte-compile-file \"$file\") (kill-emacs 1))" \
+        --eval "(pcase-let ((\`(,num-errors ,num-warnings) (makem-byte-compile-file \"$file\"))) (when (or (and byte-compile-error-on-warn (not (zerop num-warnings))) (not (zerop num-errors))) (kill-emacs 1)))" \
         && verbose 3 "Compiling $file finished without errors." \
             || { verbose 3 "Compiling file failed: $file"; return 1; }
 }
@@ -555,6 +570,8 @@ function sandbox {
     args_sandbox=(
         --title "makem.sh: $(basename $(pwd)) (sandbox: $sandbox_dir)"
         --eval "(setq user-emacs-directory (file-truename \"$sandbox_dir\"))"
+        --load package
+        --eval "(setq package-user-dir (expand-file-name \"elpa\" user-emacs-directory))"
         --eval "(setq user-init-file (file-truename \"$init_file\"))"
     )
 
@@ -992,7 +1009,8 @@ function test-buttercup {
 
     run_emacs \
         $(args-load-files "${files_project_test[@]}") \
-        -f buttercup-run \
+        --load "$buttercup_file" \
+        --eval "(progn (setq backtrace-on-error-noninteractive nil) (buttercup-run))" \
         && success "Buttercup tests finished without errors." \
             || error "Buttercup tests failed."
 }
