@@ -355,7 +355,7 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
   (pcase-let* ((`(,manual ,relevance ,within ,line ,mode ,buffer ,position ,dir)
                 (dogears--format-record-list record)))
     (format "%s [%9s]  (%25s)  \"%25s\"  %s %12s %s\\%s"
-            manual relevance within line buffer mode position dir)))
+            (if manual "✓" " ") relevance within line buffer mode position dir)))
 
 (defun dogears--format-record-list (record)
   "Return a list of elements in RECORD formatted."
@@ -371,6 +371,7 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
                    (add-face-text-property 0 (length string) face 'append string)))
                string))
     (pcase-let* ((`(,name . ,(map filename line manual mode position within)) record)
+                 (manual (if manual "✓" " "))
                  (buffer (face-propertize (if filename
                                               (file-name-nondirectory filename)
                                             name)
