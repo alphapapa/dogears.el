@@ -491,9 +491,12 @@ Compares against modes in `dogears-ignore-modes'."
   "Return `tabulated-list-entries'."
   (cl-loop for place in dogears-list
            for i from 0
+           for index = (if (= i dogears-index)
+                           (propertize (number-to-string i)
+                                       'face 'font-lock-keyword-face)
+                         (number-to-string i))
            collect (list place
-                         (cl-coerce (cons (number-to-string i)
-                                          (dogears--format-record-list place))
+                         (cl-coerce (cons index (dogears--format-record-list place))
                                     'vector))))
 
 ;;;; Footer
