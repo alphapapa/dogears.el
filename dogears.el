@@ -181,38 +181,42 @@ you've been and helps you retrace your steps."
       (cancel-timer dogears-idle-timer)
       (setf dogears-idle-timer nil))))
 
+(defun dogears--place (&optional manualp)
+  "Return record for current buffer at point."
+  (when-let ((record (or (ignore-errors
+                           (funcall bookmark-make-record-function))
+                         (dogears--buffer-record))))
+    (pcase (car record)
+      ;; Like `bookmark-make-record', we may have to add a string ourselves.
+      ;; And we want every record to have one as its first element, for
+      ;; consistency.  And sometimes, records have a nil name rather than an
+      ;; empty string, depending on the bookmark-make-record-function (I'm
+      ;; not sure if there are defined standards for what the first element
+      ;; of a bookmark record should be).
+      ((pred stringp)
+       ;; Record already has a string as its first element: do nothing.
+       nil)
+      (`nil (setf (car record) ""))
+      (_ (push "" record)))
+    (setf (map-elt (cdr record) 'manual) manualp)
+    (unless (map-elt (cdr record) 'buffer)
+      (setf (map-elt (cdr record) 'buffer) (buffer-name)))
+    (when-let ((within (or (funcall dogears-within-function)
+                           (dogears--within)
+                           (car record))))
+      (setf (map-elt (cdr record) 'within) within))
+    (setf (map-elt (cdr record) 'mode) major-mode
+          (map-elt (cdr record) 'line) (buffer-substring
+                                        (point-at-bol) (point-at-eol)))
+    record))
+
 ;;;###autoload
 (defun dogears-remember (&rest _ignore)
   "Remember (\"dogear\") the current place."
   (interactive)
   (unless (cl-some #'funcall dogears-ignore-places-functions)
-    (if-let ((record (or (ignore-errors
-                           (funcall bookmark-make-record-function))
-                         (dogears--buffer-record))))
+    (if-let ((record (dogears--place)))
         (progn
-          (pcase (car record)
-            ;; Like `bookmark-make-record', we may have to add a string ourselves.
-            ;; And we want every record to have one as its first element, for
-            ;; consistency.  And sometimes, records have a nil name rather than an
-            ;; empty string, depending on the bookmark-make-record-function (I'm
-            ;; not sure if there are defined standards for what the first element
-            ;; of a bookmark record should be).
-            ((pred stringp)
-             ;; Record already has a string as its first element: do nothing.
-             nil)
-            (`nil (setf (car record) ""))
-            (_ (push "" record)))
-          (setf (map-elt (cdr record) 'manual)
-                (if (called-interactively-p 'interactive) "✓" " "))
-          (unless (map-elt (cdr record) 'buffer)
-            (setf (map-elt (cdr record) 'buffer) (buffer-name)))
-          (when-let ((within (or (funcall dogears-within-function)
-                                 (dogears--within)
-                                 (car record))))
-            (setf (map-elt (cdr record) 'within) within))
-          (setf (map-elt (cdr record) 'mode) major-mode
-                (map-elt (cdr record) 'line) (buffer-substring
-                                              (point-at-bol) (point-at-eol)))
           ;; It's hard to say whether push or pushnew is the best choice.  When returning
           ;; to a dogeared place, that place gets moved to the front of the list, or it
           ;; remains where it was.  Either way, unless we allow dupes, the list changes.
