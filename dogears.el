@@ -526,7 +526,7 @@ Compares against modes in `dogears-ignore-modes'."
   "Return `tabulated-list-entries'."
   (cl-loop for place in dogears-list
            for i from 0
-           for index = (if (= i dogears-index)
+           for index = (if (equal i dogears-index)
                            (propertize (number-to-string i)
                                        'face 'font-lock-keyword-face)
                          (number-to-string i))
