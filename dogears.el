@@ -206,7 +206,7 @@ you've been and helps you retrace your steps."
                            (car record))))
       (setf (map-elt (cdr record) 'within) within))
     (setf (map-elt (cdr record) 'mode) major-mode
-          (map-elt (cdr record) 'line) (buffer-substring
+          (map-elt (cdr record) 'line) (buffer-substring-no-properties
                                         (point-at-bol) (point-at-eol)))
     record))
 
