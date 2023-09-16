@@ -117,6 +117,9 @@ Then the user can run a command to view or go to places in the list.
 + Commands ~dogears-forward~ and ~dogears-back~ accept a universal prefix argument to move to manually remembered places.
 + Highlight index of last-selected place in ~dogears-list~ buffer.
 
+*Changes*
+
++ Command ~dogears-go~ offers only "relevant" places by default; with universal prefix, it offers all places.
 
 *Fixes*
 

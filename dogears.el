@@ -232,9 +232,21 @@ you've been and helps you retrace your steps."
 ;;;###autoload
 (defun dogears-go (place)
   "Go to dogeared PLACE.
-Interactively, select PLACE with completion.  PLACE should be a
-bookmark record."
-  (interactive (let* ((collection (cl-loop for place in dogears-list
+Interactively, select PLACE with completion; with universal
+prefix, offer all places, otherwise only ones relevant to current
+context.  PLACE should be a bookmark record."
+  ;; FIXME: `dogears--relevance' seems slow because it calls `proejct-current' which
+  ;; has a long, slow call chain involving `locate-dominating-file', and appears to
+  ;; have no caching for that; and we call `dogears--relevance' twice in this
+  ;; command, making it doubly slow.  Caching the relevance would only work within a
+  ;; single invocation, because it depends on the context every time it's called.
+  (interactive (let* ((filter-fn (if current-prefix-arg
+                                     #'identity
+                                   (lambda (list)
+                                     (cl-remove-if (lambda (place)
+                                                     (string-empty-p (dogears--relevance place)))
+                                                   list))))
+                      (collection (cl-loop for place in (funcall filter-fn dogears-list)
                                            for key = (dogears--format-record place)
                                            collect (cons key place)))
                       (choice (completing-read "Place: " collection nil t)))
