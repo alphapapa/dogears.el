@@ -120,6 +120,7 @@ Then the user can run a command to view or go to places in the list.
 *Changes*
 
 + Command ~dogears-go~ offers only "relevant" places by default; with universal prefix, it offers all places.
++ Commands ~dogears-forward~ and ~dogears-backward~ inverted: "backward" means to go to older places in history, and "forward" to go to more recent ones.
 
 *Fixes*
 

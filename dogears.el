@@ -288,10 +288,10 @@ consider manually dogeared places."
                                (map-elt (cdr place) 'manualp)))))
          (position (cl-position-if predicate dogears-list
                                    :start (pcase direction
-                                            ('forward (1+ dogears-position)))
+                                            ('backward (1+ dogears-position)))
                                    :end (pcase direction
-                                          ('backward dogears-position))
-                                   :from-end (equal 'backward direction)))
+                                          ('forward dogears-position))
+                                   :from-end (equal 'forward direction)))
          place)
     (if position
         (progn
