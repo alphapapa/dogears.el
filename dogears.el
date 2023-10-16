@@ -286,15 +286,17 @@ consider manually dogeared places."
                       (and (not (dogears--equal place current-place))
                            (or (not manualp)
                                (map-elt (cdr place) 'manualp)))))
-         (place (cl-find-if predicate dogears-list
-                            :start (pcase direction
-                                     ('forward (1+ dogears-position)))
-                            :end (pcase direction
-                                   ('backward dogears-position))
-                            :from-end (equal 'backward direction))))
-    (if place
+         (position (cl-position-if predicate dogears-list
+                                   :start (pcase direction
+                                            ('forward (1+ dogears-position)))
+                                   :end (pcase direction
+                                          ('backward dogears-position))
+                                   :from-end (equal 'backward direction)))
+         place)
+    (if position
         (progn
-          (setf dogears-position (cl-position place dogears-list :test #'dogears--equal))
+          (setf dogears-position position
+                place (nth position dogears-list))
           (when (not (dogears--equal place current-place :ignore-manual-p manualp))
             (dogears-go place)
             (when dogears-message
