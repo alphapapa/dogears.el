@@ -416,7 +416,7 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
           (setf dir (split-string dir "/" t)
                 dir (nreverse dir)
                 dir (cl-loop for d in dir
-                             concat (truncate-string-to-width d 10)
+                             concat (truncate-string-to-width d 10 nil nil t)
                              concat "\\")
                 dir (face-propertize dir 'font-lock-comment-face))
         (setf dir ""))

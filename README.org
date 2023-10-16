@@ -126,6 +126,7 @@ Then the user can run a command to view or go to places in the list.
 
 + Various logic regarding moving between remembered places.
 + Mark for manually remembered places in ~dogears-list~ completion.
++ Truncate path segments with ellipsis.
 
 ** 0.1
 
