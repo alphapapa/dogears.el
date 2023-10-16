@@ -45,7 +45,7 @@
 (defvar dogears-list nil
   "List of dogeared places.")
 
-(defvar dogears-index 0
+(defvar dogears-position 0
   "Index of last-visited dogeared place.
 Used in `dogears-back' and `dogears-forward'.")
 
@@ -288,13 +288,13 @@ consider manually dogeared places."
                                (map-elt (cdr place) 'manualp)))))
          (place (cl-find-if predicate dogears-list
                             :start (pcase direction
-                                     ('forward (1+ dogears-index)))
+                                     ('forward (1+ dogears-position)))
                             :end (pcase direction
-                                   ('backward dogears-index))
+                                   ('backward dogears-position))
                             :from-end (equal 'backward direction))))
     (if place
         (progn
-          (setf dogears-index (cl-position place dogears-list :test #'dogears--equal))
+          (setf dogears-position (cl-position place dogears-list :test #'dogears--equal))
           (when (not (dogears--equal place current-place :ignore-manual-p manualp))
             (dogears-go place)
             (when dogears-message
@@ -302,7 +302,7 @@ consider manually dogeared places."
                        (pcase direction
                          ('backward "Back")
                          ('forward "Forward"))
-                       (1+ dogears-index) (length dogears-list)))))
+                       (1+ dogears-position) (length dogears-list)))))
       (dogears--update-list-buffer)
       (user-error "At %s %sdogeared place"
                   (pcase direction
@@ -538,7 +538,7 @@ Compares against modes in `dogears-ignore-modes'."
   "Return `tabulated-list-entries'."
   (cl-loop for place in dogears-list
            for i from 0
-           for index = (if (equal i dogears-index)
+           for index = (if (equal i dogears-position)
                            (propertize (number-to-string i)
                                        'face 'font-lock-keyword-face)
                          (number-to-string i))
