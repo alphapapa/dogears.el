@@ -125,6 +125,7 @@ Then the user can run a command to view or go to places in the list.
 *Fixes*
 
 + Various logic regarding moving between remembered places.
++ Mark for manually remembered places in ~dogears-list~ completion.
 
 ** 0.1
 
