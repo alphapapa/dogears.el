@@ -246,9 +246,12 @@ context.  PLACE should be a bookmark record."
                                      (cl-remove-if (lambda (place)
                                                      (string-empty-p (dogears--relevance place)))
                                                    list))))
-                      (collection (cl-loop for place in (funcall filter-fn dogears-list)
-                                           for key = (dogears--format-record place)
+                      (collection (cl-loop for i from 0
+                                           for place in (funcall filter-fn dogears-list)
+                                           for key = (concat (number-to-string i) ": "
+                                                             (dogears--format-record place))
                                            collect (cons key place)))
+                      ;; TODO: Disable completion sorting (so they're always in order). 
                       (choice (completing-read "Place: " collection nil t)))
                  (list (alist-get choice collection nil nil #'equal))))
   (or (ignore-errors
