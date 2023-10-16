@@ -526,7 +526,7 @@ Compares against modes in `dogears-ignore-modes'."
                                '("Line" 20 t)
                                '("Buffer" 20 t)
                                '("Mode" 12 t :right-align t)
-                               '("Pos" 5)
+                               '("Pos" 5 t :right-align t)
                                '("Directory" 25 t))
         tabulated-list-sort-key '("#" . nil)
         truncate-string-ellipsis dogears-ellipsis)
