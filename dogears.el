@@ -304,7 +304,7 @@ consider manually dogeared places."
                        (pcase direction
                          ('backward "Back")
                          ('forward "Forward"))
-                       (1+ dogears-position) (length dogears-list)))))
+                       dogears-position (length dogears-list)))))
       (dogears--update-list-buffer)
       (user-error "At %s %sdogeared place"
                   (pcase direction
