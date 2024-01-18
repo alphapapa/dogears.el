@@ -206,8 +206,18 @@ you've been and helps you retrace your steps."
                            (car record))))
       (setf (map-elt (cdr record) 'within) within))
     (setf (map-elt (cdr record) 'mode) major-mode
+	  ;; The loop returns nil if `helm-dogears-multiline-count' is set to 0.
+	  (map-elt (cdr record) 'prev-lines) (cl-loop for i from 0 to (- helm-dogears-multiline-count 1)
+						      collect (buffer-substring-no-properties
+							(point-at-bol (- i))
+							(point-at-eol (- i))))
           (map-elt (cdr record) 'line) (buffer-substring-no-properties
-                                        (point-at-bol) (point-at-eol)))
+                                        (point-at-bol) (point-at-eol))
+	  ;; Same as above.
+          (map-elt (cdr record) 'next-lines) (cl-loop for i from 2 to (1+ helm-dogears-multiline-count)
+						      collect (buffer-substring-no-properties
+							(point-at-bol i)
+							(point-at-eol i))))
     record))
 
 ;;;###autoload
@@ -371,15 +381,18 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
                    (beginning-of-defun)
                    (buffer-substring (point-at-bol) (point-at-eol)))))))
 
-(defun dogears--format-record (record)
-  "Return bookmark RECORD formatted."
-  (pcase-let* ((`(,manual ,relevance ,within ,line ,mode ,buffer ,position ,dir)
-                (dogears--format-record-list record)))
-    (format "%s [%9s]  (%25s)  \"%25s\"  %s %12s %s\\%s"
-            manual relevance within line buffer mode position dir)))
+(defun dogears--format-record (record &optional multiline)
+  "Return bookmark RECORD formatted.
+If optional argument MULTILINE is t, RECORD should contain surrounding lines."
+  (pcase-let* ((`(,manual ,relevance ,within ,prev-lines ,line ,next-lines ,buffer ,mode ,position ,dir)
+                (dogears--format-record-list record multiline)))
+    (format "%s [%9s]  (%25s)  %s \"%25s\" %s %s %12s %s\\%s"
+            manual relevance within prev-lines line next-lines buffer mode position dir)))
 
-(defun dogears--format-record-list (record)
-  "Return a list of elements in RECORD formatted."
+(defun dogears--format-record-list (record &optional multiline)
+  "Return a list of elements in RECORD formatted.
+If optional argument MULTILINE is t, return RECORD's surrounding lines
+if they have been saved."
   (cl-labels ((face-propertize (string face)
                 ;; Return copy of STRING with FACE appended, but only if it doesn't already
                 ;; contain FACE.  (I don't know a better way to prevent faces being added
@@ -390,14 +403,27 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
 			      (and (listp property) (member face property)))
                     (add-face-text-property 0 (length string) face 'append string)))
                 string))
-    (pcase-let* ((`(,name . ,(map filename line manualp mode position within)) record)
+    (pcase-let* ((`(,name . ,(map filename prev-lines line next-lines manualp mode position within)) record)
                  (manual (if manualp "✓" " "))
                  (buffer (face-propertize (if filename
                                               (file-name-nondirectory filename)
                                             name)
                                           'font-lock-constant-face))
-                 (line (string-trim line))
-                 (mode (face-propertize (string-remove-suffix "-mode" (symbol-name mode))
+		 (prev-lines (if (and multiline prev-lines)
+				 (concat
+				  "\n"
+				  (mapconcat #'string-trim (reverse prev-lines) "\n")
+				  "\n")
+			     ""))
+		 (line (if multiline
+			   (concat line "\n")
+			 (string-trim line)))
+		 (next-lines (if (and multiline next-lines)
+				 (concat
+				  (mapconcat #'string-trim next-lines "\n")
+				  "\n")
+			       ""))
+		 (mode (face-propertize (string-remove-suffix "-mode" (symbol-name mode))
                                         'font-lock-type-face))
                  (position (if position
                                (number-to-string position)
@@ -419,7 +445,7 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
                              concat "\\")
                 dir (face-propertize dir 'font-lock-comment-face))
         (setf dir ""))
-      (list manual relevance within line buffer mode position dir))))
+      (list manual relevance within prev-lines line next-lines buffer mode position dir))))
 
 (defun dogears--relevance (record)
   "Return the relevance string for RECORD."

@@ -37,6 +37,8 @@
 (require 'dogears)
 
 ;;;; Variables
+(defvar helm-dogears--multiline nil
+  "Set to t or nil by `helm-dogears-multiline-count''s setter function.")
 
 ;; We autoload this so people can use it in other Helm commands
 ;; without having to remember to load this library first.  (An easy
@@ -47,13 +49,30 @@
   (helm-make-source "Dogears" 'helm-source-sync
     :candidates (lambda ()
                   (cl-loop for place in dogears-list
-                           collect (cons (dogears--format-record place)
+                           collect (cons (dogears--format-record place helm-dogears--multiline)
                                          place)))
+    :multiline t
     :action (list (cons "Go to place" #'dogears-go))))
 
 
 ;;;; Customization
+;; Setter functions
+(defun helm-dogears--multiline-set (sym val)
+  "Set SYM to VAL and `helm-dogears--multiline' to t if VAL is a non-null integer.
+This is a setter function for the `helm-dogears-multiline-count' customizable variable."
+  (set sym val)
+  (setq helm-dogears--multiline (not (= val 0))))
 
+;; Customizable variables
+(defcustom helm-dogears-multiline-count 0
+  "Number of surrounding lines to display for each record.
+For example, a value of 3 will display 3 lines above and 3 lines
+beneath each record.  Set to 0 if you don't want the surrounding
+lines to be displayed."
+  :group 'dogears
+  :type 'integer
+  :set 'helm-dogears--multiline-set
+  :initialize 'custom-initialize-set)
 
 ;;;; Commands
 
@@ -65,7 +84,6 @@
 
 
 ;;;; Functions
-
 
 ;;;; Footer
 
