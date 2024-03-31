@@ -373,7 +373,7 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
 
 (defun dogears--format-record (record)
   "Return bookmark RECORD formatted."
-  (pcase-let* ((`(,manual ,relevance ,within ,line ,mode ,buffer ,position ,dir)
+  (pcase-let* ((`(,manual ,relevance ,within ,line ,buffer ,mode ,position ,dir)
                 (dogears--format-record-list record)))
     (format "%s [%9s]  (%25s)  \"%25s\"  %s %12s %s\\%s"
             manual relevance within line buffer mode position dir)))
