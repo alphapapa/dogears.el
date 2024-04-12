@@ -127,6 +127,7 @@ Then the user can run a command to view or go to places in the list.
 + Various logic regarding moving between remembered places.
 + Mark for manually remembered places in ~dogears-list~ completion.
 + Truncate path segments with ellipsis.
++ Swap mode and buffer name in formatted records.  ([[https://github.com/alphapapa/dogears.el/pull/23][#23]].  Thanks to [[https://github.com/pacastega][Pablo Castellanos]].)
 
 ** 0.1
 
