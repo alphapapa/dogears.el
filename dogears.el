@@ -248,7 +248,7 @@ context.  PLACE should be a bookmark record."
                                                    list))))
                       (collection (cl-loop for i from 0
                                            for place in (funcall filter-fn dogears-list)
-                                           for key = (concat (number-to-string i) ": "
+                                           for key = (format "%2.2s: %s"i
                                                              (dogears--format-record place))
                                            collect (cons key place)))
                       ;; TODO: Disable completion sorting (so they're always in order). 
@@ -375,7 +375,7 @@ IGNORE-MANUAL-P, ignore whether places were manually remembered."
   "Return bookmark RECORD formatted."
   (pcase-let* ((`(,manual ,relevance ,within ,line ,buffer ,mode ,position ,dir)
                 (dogears--format-record-list record)))
-    (format "%s [%9s]  (%25s)  \"%25s\"  %s %12s %s\\%s"
+    (format "%s [%9.9s]  (%35.35s)  \"%35.35s\"  %15.15s %12.12s %5.5s:%s"
             manual relevance within line buffer mode position dir)))
 
 (defun dogears--format-record-list (record)
